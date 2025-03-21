@@ -3,19 +3,50 @@
   <head>
     <title>Broadcaster</title>
     <meta charset="UTF-8" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              secondary: "#8ECAE6",
+              accent: "#219EBC",
+              dark: "#023047",
+              warning: "#FFB703",
+              primary: "#FB8500",
+            },
+          },
+        },
+      };
+    </script>
   </head>
-  <body>
-    <section class="select">
-      <label for="audioSource">Audio source: </label>
-      <select id="audioSource"></select>
+  <body class="bg-dark text-secondary">
+    <section class="p-4 mx-auto max-w-md">
+      <label for="audioSource" class="block font-bold text-primary mb-2"
+        >Audio source:</label
+      >
+      <select
+        id="audioSource"
+        class="w-full p-2 border border-warning rounded"
+      ></select>
     </section>
-
-    <section class="select">
-      <label for="videoSource">Video source: </label>
-      <select id="videoSource"></select>
+    <section class="p-4 mx-auto max-w-md">
+      <label for="videoSource" class="block font-bold text-primary mb-2"
+        >Video source:</label
+      >
+      <select
+        id="videoSource"
+        class="w-full p-2 border border-warning rounded"
+      ></select>
     </section>
-
-    <video playsinline autoplay muted></video>
+    <div class="flex justify-center">
+      <video
+        playsinline
+        autoplay
+        muted
+        class="w-full max-w-md border-4 border-primary"
+      ></video>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/broadcast.js"></script>
   </body>

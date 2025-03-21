@@ -1,5 +1,26 @@
 const express = require("express");
 const app = express();
+require("dotenv").config();
+
+function auth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        res.setHeader('WWW-Authenticate', 'Basic realm="Enter username and password"');
+        return res.status(401).send("Authentication required.");
+    }
+    const encoded = authHeader.split(' ')[1] || '';
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    const [username, password] = decoded.split(':');
+    if (username === process.env.BROADCAST_USER && password === process.env.BROADCAST_PASS) {
+        return next();
+    }
+    res.setHeader('WWW-Authenticate', 'Basic realm="Enter username and password"');
+    return res.status(401).send("Authentication required.");
+}
+
+app.get('/broadcast.html', auth, (req, res) => {
+    res.sendFile(__dirname + "/public/broadcast.html");
+});
 
 let broadcaster;
 const port = 4000;
@@ -8,6 +29,7 @@ const http = require("http");
 const server = http.createServer(app);
 
 const io = require("socket.io")(server);
+
 app.use(express.static(__dirname + "/public"));
 
 io.sockets.on("error", e => console.log(e));

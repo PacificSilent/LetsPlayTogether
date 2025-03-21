@@ -1,14 +1,71 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Viewer</title>
     <meta charset="UTF-8" />
-    <link href="/styles.css" rel="stylesheet" />
+    <!-- Para viewport dinámico en móviles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lets Play Together</title>
+    <link rel="manifest" href="/manifest.json" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              secondary: "#8ECAE6",
+              accent: "#219EBC",
+              dark: "#023047",
+              warning: "#FFB703",
+              primary: "#FB8500",
+            },
+          },
+        },
+      };
+    </script>
   </head>
-  <body>
-    <video playsinline autoplay muted></video>
-    <button id="enable-audio">Enable audio</button>
+  <body class="bg-black text-secondary">
+    <div class="video-container fixed top-0 left-0 w-screen h-screen">
+      <video
+        playsinline
+        autoplay
+        muted
+        class="w-full h-full object-cover"
+      ></video>
+      <section
+        id="options"
+        class="absolute bottom-4 right-4 flex flex-col space-y-2 hidden z-10"
+      >
+        <button id="enable-audio" class="bg-primary text-white p-2 rounded">
+          Enable audio
+        </button>
+      </section>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/watch.js"></script>
+    <script>
+      const container = document.querySelector(".video-container");
+      const options = document.getElementById("options");
+
+      container.addEventListener("click", () => {
+        options.classList.toggle("hidden");
+      });
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((registration) => {
+              console.log("ServiceWorker registered: ", registration);
+            })
+            .catch((registrationError) => {
+              console.log(
+                "ServiceWorker registration failed: ",
+                registrationError
+              );
+            });
+        });
+      }
+    </script>
   </body>
 </html>
