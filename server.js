@@ -34,6 +34,7 @@ app.use(express.static(__dirname + "/public"));
 
 io.sockets.on("error", e => console.log(e));
 io.sockets.on("connection", socket => {
+  console.log("Nuevo cliente conectado:", socket.id);
   socket.on("broadcaster", () => {
     broadcaster = socket.id;
     socket.broadcast.emit("broadcaster");
@@ -49,6 +50,9 @@ io.sockets.on("connection", socket => {
   });
   socket.on("candidate", (id, message) => {
     socket.to(id).emit("candidate", socket.id, message);
+  });
+  socket.on("joystick-data", data => {
+    console.log('JOYSTICK DATA:',data);
   });
   socket.on("disconnect", () => {
     socket.to(broadcaster).emit("disconnectPeer", socket.id);

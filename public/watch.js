@@ -1,17 +1,17 @@
 let peerConnection;
 const config = {
   iceServers: [
-      { 
-        "urls": "stun:stun.l.google.com:19302",
-      },
-      {
-        urls: "stun:pacificsilent.localto.net:1546",
-      },
-      {
-        urls: "turn:pacificsilent.localto.net:1546?transport=tcp",
-        username: "test",
-        credential: "test",
-      },
+    { 
+      "urls": "stun:stun.l.google.com:19302",
+    },
+    {
+      urls: "stun:pacificsilent.localto.net:1546",
+    },
+    {
+      urls: "turn:pacificsilent.localto.net:1546?transport=tcp",
+      username: "test",
+      credential: "test",
+    },
   ]
 };
 
@@ -36,7 +36,6 @@ socket.on("offer", (id, description) => {
     }
   };
 });
-
 
 socket.on("candidate", (id, candidate) => {
   peerConnection
@@ -89,4 +88,45 @@ document.addEventListener("DOMContentLoaded", () => {
     videoElem.muted = !videoElem.muted;
     unmuteBtn.textContent = videoElem.muted ? "Desmutear" : "Mutear";
   });
+
+  const maxJoysticks = 4;
+  const joystickMapping = {};
+  const prevValues = {};
+
+  function pollGamepads() {
+    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+    
+    for (let gp of gamepads) {
+      if (gp) {
+        if (!(gp.index in joystickMapping)) {
+          if (Object.keys(joystickMapping).length < maxJoysticks) {
+            joystickMapping[gp.index] = Object.keys(joystickMapping).length + 1;
+          }
+        }
+        if (gp.index in joystickMapping) {
+          const joystickId = socket.id + '-' + joystickMapping[gp.index];
+          const newData = {
+            axes: gp.axes,
+            buttons: gp.buttons.map(button => button.value)
+          };
+          if (!prevValues[joystickId] || JSON.stringify(prevValues[joystickId]) !== JSON.stringify(newData)) {
+            prevValues[joystickId] = newData;
+            const data = {
+              id: joystickId,
+              axes: newData.axes,
+              buttons: newData.buttons
+            };
+
+            if (data.id) {
+              socket.emit("joystick-data", data);
+            }
+          
+          }
+        }
+      }
+    }
+    requestAnimationFrame(pollGamepads);
+  }
+
+  pollGamepads();
 });
