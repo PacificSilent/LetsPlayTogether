@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 
+const { sendToVigembus, disconnectJoysticks } = require('./vigembus');
+
 function auth(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -53,6 +55,7 @@ io.sockets.on("connection", socket => {
   });
   socket.on("joystick-data", data => {
     console.log('JOYSTICK DATA:',data);
+    sendToVigembus(data);
   });
   socket.on("disconnect", () => {
     socket.to(broadcaster).emit("disconnectPeer", socket.id);
