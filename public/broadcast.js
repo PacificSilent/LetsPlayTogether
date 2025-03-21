@@ -1,7 +1,9 @@
+const MAX_RESOLUTION = { width: 1920, height: 1080 };
+
 const peerConnections = {};
 const config = {
   iceServers: [
-    { 
+    {
       "urls": "stun:stun.l.google.com:19302",
     },
     {
@@ -57,11 +59,6 @@ window.onunload = window.onbeforeunload = () => {
 
 // Get camera and microphone
 const videoElement = document.querySelector("video");
-const audioSelect = document.querySelector("select#audioSource");
-const videoSelect = document.querySelector("select#videoSource");
-
-audioSelect.onchange = getStream;
-videoSelect.onchange = getStream;
 
 getStream()
   .then(getDevices)
@@ -91,27 +88,30 @@ function getStream() {
     window.stream.getTracks().forEach(track => {
       track.stop();
     });
-  }
-  const audioSource = audioSelect.value;
-  const videoSource = videoSelect.value;
-  const constraints = {
-    audio: { deviceId: audioSource ? { exact: audioSource } : undefined },
-    video: { deviceId: videoSource ? { exact: videoSource } : undefined }
-  };
-  return navigator.mediaDevices
-    .getUserMedia(constraints)
+  } 
+  return getScreen()
     .then(gotStream)
     .catch(handleError);
+  
+}
+
+function getScreen() {
+  return navigator.mediaDevices.getDisplayMedia({
+    video: {
+        frameRate: { ideal: 60, max: 60 },
+        width: { ideal: MAX_RESOLUTION.width, max: MAX_RESOLUTION.width },
+        height: { ideal: MAX_RESOLUTION.height, max: MAX_RESOLUTION.height }
+    },
+    audio: {
+        noiseSuppression: false,
+        autoGainControl: false,
+        echoCancellation: false
+    }
+});
 }
 
 function gotStream(stream) {
   window.stream = stream;
-  audioSelect.selectedIndex = [...audioSelect.options].findIndex(
-    option => option.text === stream.getAudioTracks()[0].label
-  );
-  videoSelect.selectedIndex = [...videoSelect.options].findIndex(
-    option => option.text === stream.getVideoTracks()[0].label
-  );
   videoElement.srcObject = stream;
   socket.emit("broadcaster");
 }

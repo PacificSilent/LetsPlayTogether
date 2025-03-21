@@ -17,9 +17,6 @@ const config = {
 
 const socket = io.connect(window.location.origin);
 const video = document.querySelector("video");
-const enableAudioButton = document.querySelector("#enable-audio");
-
-enableAudioButton.addEventListener("click", enableAudio)
 
 socket.on("offer", (id, description) => {
   peerConnection = new RTCPeerConnection(config);
@@ -60,7 +57,36 @@ window.onunload = window.onbeforeunload = () => {
   peerConnection.close();
 };
 
-function enableAudio() {
-  console.log("Enabling audio")
-  video.muted = false;
+// Registra el Service Worker
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((registration) => {
+        console.log("ServiceWorker registered: ", registration);
+      })
+      .catch((registrationError) => {
+        console.log("ServiceWorker registration failed: ", registrationError);
+      });
+  });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const optionsPanel = document.getElementById("options-panel");
+  const videoElem = document.getElementById("video");
+  const unmuteBtn = document.getElementById("unmute-video");
+
+  // Toggle del panel de opciones al hacer click en la pantalla
+  document.addEventListener("click", (e) => {
+    if (!optionsPanel.contains(e.target)) {
+      optionsPanel.classList.toggle("hidden");
+    }
+  });
+
+  // Toggle del mute/desmute al hacer click en el botón
+  unmuteBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // Evita que el click cierre el panel
+    videoElem.muted = !videoElem.muted;
+    unmuteBtn.textContent = videoElem.muted ? "Desmutear" : "Mutear";
+  });
+});
