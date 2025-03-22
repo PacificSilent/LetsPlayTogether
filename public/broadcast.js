@@ -1,4 +1,11 @@
-const MAX_RESOLUTION = { width: 1920, height: 1080 };
+const baseBitrate = 5000000; // 5 Mbps
+const minBitrate = 1000000;  // 1 Mbps
+const maxBitrate = 10000000; // 10 Mbps
+
+const dynamicBitrates = {};
+const videoSenders = {};
+
+const clientDecodeTimes = {};
 
 const peerConnections = {};
 const config = {
@@ -21,6 +28,29 @@ socket.on("watcher", id => {
 
     let stream = videoElement.srcObject;
     stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+
+    // Configurar parámetros de codificación para la pista de video
+    const videoSender = peerConnection.getSenders().find(sender => sender.track && sender.track.kind === "video");
+    if (videoSender) {
+        // Almacenamos el videoSender y establecemos el bitrate base para este peer.
+        videoSenders[id] = videoSender;
+        dynamicBitrates[id] = baseBitrate;
+        const params = videoSender.getParameters();
+        if (!params.encodings) {
+            params.encodings = [{}];
+        }
+        params.encodings[0].maxBitrate = dynamicBitrates[id];
+        params.encodings[0].maxFramerate = 60;
+        params.encodings[0].networkPriority = "high";
+        params.encodings[0].priority = "high";
+        videoSender.setParameters(params)
+            .then(() => {
+                console.log("Parámetros de codificación actualizados con bitrate base:", dynamicBitrates[id]);
+            })
+            .catch(err => {
+                console.error("Error al actualizar los parámetros:", err);
+            });
+    }
 
     peerConnection.onicecandidate = event => {
         if (event.candidate) {
@@ -46,6 +76,12 @@ socket.on("disconnectPeer", id => {
         delete peerConnections[id];
     }
     delete joystickDataByPeer[id];
+});
+
+socket.on("client-decode-stats", (id, decodeTime) => {
+    console.log(`Tiempo de decodificación para peer ${id}: ${decodeTime} ms`);
+    
+    clientDecodeTimes[id] = decodeTime;
 });
 
 // -------------------------
@@ -137,8 +173,6 @@ function getScreen() {
     return navigator.mediaDevices.getDisplayMedia({
         video: {
             frameRate: { ideal: 60, max: 60 },
-            width: { ideal: MAX_RESOLUTION.width, max: MAX_RESOLUTION.width },
-            height: { ideal: MAX_RESOLUTION.height, max: MAX_RESOLUTION.height }
         },
         audio: {
             noiseSuppression: false,
@@ -268,5 +302,67 @@ setInterval(async () => {
       <p>Promedio de RTT: ${globalStats.avgRtt}</p>
       <p>Tiempo de Streaming: ${globalStats.streamingTime}</p>
     `;
+  }
+
+  // Recorrer cada peer para obtener estadísticas individuales y ajustar el bitrate
+  for (let id in peerConnections) {
+      try {
+          const pc = peerConnections[id];
+          const stats = await pc.getStats();
+          let totalRoundTripTime = 0;
+          let rttCount = 0;
+          let totalPacketLoss = 0;
+          let packetLossCount = 0;
+  
+          stats.forEach(report => {
+              if (report.type === "remote-inbound-rtp") {
+                  if (report.roundTripTime) {
+                      totalRoundTripTime += report.roundTripTime;
+                      rttCount++;
+                  }
+                  if (report.fractionLost !== undefined) {
+                      // Convertir fractionLost de [0, 1] a porcentaje (asumimos report.fractionLost ya es un valor entre 0 y 1)
+                      const packetLoss = report.fractionLost * 100;
+                      totalPacketLoss += packetLoss;
+                      packetLossCount++;
+                  }
+              }
+          });
+  
+          const avgRtt = rttCount > 0 ? (totalRoundTripTime / rttCount) : 0;
+          const avgPacketLoss = packetLossCount > 0 ? (totalPacketLoss / packetLossCount) : 0;
+  
+          // Ajuste simple: si RTT supera 0.5 seg, pérdida mayor a 5% o tiempo de decodificación alto, se reduce el bitrate
+          if (videoSenders[id]) {
+              let currentBitrate = dynamicBitrates[id];
+              let newBitrate = currentBitrate;
+              // Umbral de decodificación, por ejemplo 200ms
+              const decodeThreshold = 200;
+              if (avgRtt > 0.5 || avgPacketLoss > 5 || (clientDecodeTimes[id] && clientDecodeTimes[id] > decodeThreshold)) {
+                  newBitrate = Math.max(currentBitrate * 0.8, minBitrate);
+              } else {
+                  newBitrate = Math.min(currentBitrate * 1.05, maxBitrate);
+              }
+  
+              if (newBitrate !== currentBitrate) {
+                  dynamicBitrates[id] = newBitrate;
+                  const sender = videoSenders[id];
+                  const params = sender.getParameters();
+                  if (!params.encodings) {
+                      params.encodings = [{}];
+                  }
+                  params.encodings[0].maxBitrate = newBitrate;
+                  sender.setParameters(params)
+                      .then(() => {
+                          console.log(`Se actualizó el bitrate para peer ${id} a ${newBitrate} bps`);
+                      })
+                      .catch(err => {
+                          console.error("Error al actualizar bitrate para peer", id, err);
+                      });
+              }
+          }
+      } catch (e) {
+          console.error("Error en getStats para peer ", id, e);
+      }
   }
 }, 1000);

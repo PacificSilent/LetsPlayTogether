@@ -68,5 +68,9 @@ io.sockets.on("connection", socket => {
     // Se asume que "broadcaster" contiene el socket.id del broadcaster
     io.to(broadcaster).emit("admin-pong", data);
   });
+  socket.on("client-decode-stats", (id, decodeTime) => {
+    // Reenvía la métrica de decodificación al broadcaster
+    io.to(broadcaster).emit("client-decode-stats", id, decodeTime);
+});
 });
 server.listen(port, () => console.log(`Server is running on port ${port}`));

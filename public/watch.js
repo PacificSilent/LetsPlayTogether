@@ -140,8 +140,15 @@ document.addEventListener("DOMContentLoaded", () => {
       .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }
 
+  // En el cliente (watcher)
+  function reportDecodeTime(decodeTime) {
+    socket.emit("client-decode-stats", socket.id, decodeTime);
+  }
+
   async function updateClientStats() {
     if (!peerConnection) return;
+    // Inicia la medición del tiempo de 'decode'
+    let decodeStart = performance.now();
     try {
       const statsReport = await peerConnection.getStats();
       let framesPerSecond = 0;
@@ -202,6 +209,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Bitrate:</strong> ${(currentBitrate / 1000).toFixed(2)} kbps</p>
         <p><strong>Streaming:</strong> ${formatTime(elapsedStreamSec)}</p>
       `;
+
+      // Calcula el tiempo de decode y lo agrega a la interfaz
+      const decodeTime = performance.now() - decodeStart;
+      statsOverlay.innerHTML += `<p><strong>Decode Time:</strong> ${decodeTime.toFixed(2)} ms</p>`;
+      reportDecodeTime(decodeTime);
     } catch (err) {
       console.error("Error al obtener estadísticas:", err);
     }
