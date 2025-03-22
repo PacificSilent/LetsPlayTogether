@@ -68,7 +68,6 @@ socket.on("joystick-data", data => {
 const peerLatencies = {};
 
 socket.on("admin-pong", data => {
-    console.log("Broadcast: Recibido admin-pong:", data);
     const latency = Date.now() - data.pingStart;
     peerLatencies[data.peerId] = latency;
 });
@@ -103,7 +102,6 @@ function updatePeerList() {
 
 setInterval(() => {
     Object.keys(peerConnections).forEach(peerId => {
-        console.log("Broadcast: Enviando ping a", peerId);
         sendAdminPing(peerId);
     });
     updatePeerList();

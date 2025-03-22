@@ -48,11 +48,9 @@ socket.on("broadcaster", () => {
 });
 
 socket.on("admin-ping", data => {
-  console.log("Watch: Recibido admin-ping:", data);
   // Responder solo si el target coincide con nuestro socket.id
   if (data.target === socket.id) {
     socket.emit("admin-pong", { peerId: socket.id, pingStart: data.pingStart });
-    console.log("Watch: Enviado admin-pong:", { peerId: socket.id, pingStart: data.pingStart });
   }
 });
 
