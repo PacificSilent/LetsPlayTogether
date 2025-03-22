@@ -5,8 +5,6 @@ const maxBitrate = 10000000; // 10 Mbps
 const dynamicBitrates = {};
 const videoSenders = {};
 
-const clientDecodeTimes = {};
-
 const peerConnections = {};
 const config = {
     iceServers: [
@@ -76,12 +74,6 @@ socket.on("disconnectPeer", id => {
         delete peerConnections[id];
     }
     delete joystickDataByPeer[id];
-});
-
-socket.on("client-decode-stats", (id, decodeTime) => {
-    console.log(`Tiempo de decodificación para peer ${id}: ${decodeTime} ms`);
-    
-    clientDecodeTimes[id] = decodeTime;
 });
 
 // -------------------------
@@ -336,9 +328,7 @@ setInterval(async () => {
           if (videoSenders[id]) {
               let currentBitrate = dynamicBitrates[id];
               let newBitrate = currentBitrate;
-              // Umbral de decodificación, por ejemplo 200ms
-              const decodeThreshold = 200;
-              if (avgRtt > 0.5 || avgPacketLoss > 5 || (clientDecodeTimes[id] && clientDecodeTimes[id] > decodeThreshold)) {
+              if (avgRtt > 0.5 || avgPacketLoss > 5) {
                   newBitrate = Math.max(currentBitrate * 0.8, minBitrate);
               } else {
                   newBitrate = Math.min(currentBitrate * 1.05, maxBitrate);

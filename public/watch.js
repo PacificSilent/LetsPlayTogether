@@ -140,11 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
       .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }
 
-  // En el cliente (watcher)
-  function reportDecodeTime(decodeTime) {
-    socket.emit("client-decode-stats", socket.id, decodeTime);
-  }
-
   async function updateClientStats() {
     if (!peerConnection) return;
     // Inicia la medición del tiempo de 'decode'
@@ -213,7 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
       // Calcula el tiempo de decode y lo agrega a la interfaz
       const decodeTime = performance.now() - decodeStart;
       statsOverlay.innerHTML += `<p><strong>Decode Time:</strong> ${decodeTime.toFixed(2)} ms</p>`;
-      reportDecodeTime(decodeTime);
     } catch (err) {
       console.error("Error al obtener estadísticas:", err);
     }
