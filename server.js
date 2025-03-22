@@ -60,5 +60,15 @@ io.sockets.on("connection", socket => {
   socket.on("disconnect", () => {
     socket.to(broadcaster).emit("disconnectPeer", socket.id);
   });
+  // Dentro de io.sockets.on("connection", socket => { ... });
+  socket.on("admin-ping", data => {
+    // Reenvía el admin-ping al socket cuyo id coincide con el target
+    io.to(data.target).emit("admin-ping", data);
+  });
+  socket.on("admin-pong", data => {
+    // Reenvía el admin-pong al broadcaster
+    // Se asume que "broadcaster" contiene el socket.id del broadcaster
+    io.to(broadcaster).emit("admin-pong", data);
+  });
 });
 server.listen(port, () => console.log(`Server is running on port ${port}`));

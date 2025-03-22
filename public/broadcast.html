@@ -29,6 +29,31 @@
         class="w-full max-w-md border-4 border-primary"
       ></video>
     </div>
+    <div
+      id="stats"
+      class="fixed bottom-0 left-0 bg-gray-900 bg-opacity-75 text-white p-2 m-2 rounded text-sm"
+    >
+      <p>Peering Activo:</p>
+      <p>Joysticks Conectados:</p>
+      <p>Candidate Pair Enviado:</p>
+      <p>Outbound RTP Enviado:</p>
+      <p>Bytes Enviados (Transport):</p>
+      <p>Bytes Recibidos (Transport):</p>
+      <p>Cantidad de Reportes:</p>
+      <p>Paquetes Enviados:</p>
+      <p>Promedio de Pérdida de Paquetes:</p>
+      <p>Promedio de RTT:</p>
+      <p>Tiempo de Streaming:</p>
+    </div>
+
+    <!-- Nuevo: Lista de peers con administración -->
+    <div
+      id="peerList"
+      class="fixed bottom-0 right-0 bg-gray-900 bg-opacity-75 text-white p-2 m-2 rounded text-sm max-h-60 overflow-auto"
+    >
+      <h3 class="font-bold">Peers Conectados</h3>
+      <ul id="peers"></ul>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/broadcast.js"></script>
   </body>
