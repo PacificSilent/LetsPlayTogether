@@ -97,12 +97,9 @@ socket.on("disconnectPeer", (id) => {
 socket.on("joystick-data", (data) => {
   const parts = data.id.split("-");
   const peerId = parts[0];
-  if (!joystickDataByPeer[peerId]) {
-    joystickDataByPeer[peerId] = [];
-  }
-  if (!joystickDataByPeer[peerId].includes(data.id)) {
-    joystickDataByPeer[peerId].push(data.id);
-  }
+  // Almacena la información del joystick para este peer.
+  // Esto indicará que el peer tiene al menos un joystick conectado.
+  joystickDataByPeer[peerId] = data;
 });
 
 // Administración de peers: ping/pong y desconexión
@@ -151,7 +148,7 @@ setInterval(() => {
 
 // Manejo del streaming y obtención de dispositivos
 window.onunload = window.onbeforeunload = () => {
-  // Al cerrar la ventana, si hay transmisión activa se cierra
+  // Al cerrar la ventana, si hay transmisión activa se cierra la misma
   if (broadcastStream) {
     stopBroadcast();
   }
@@ -203,7 +200,6 @@ function handleError(error) {
 // Estadísticas Globales (globalStats)
 const globalStats = {
   connectedPeers: 0,
-  totalJoysticks: 0,
   candidatePairBytes: 0,
   outboundRtpBytes: 0,
   transportSentBytes: 0,
@@ -219,11 +215,6 @@ const globalStats = {
 setInterval(async () => {
   // Acumulación de métricas globales
   globalStats.connectedPeers = Object.keys(peerConnections).length;
-  let totalJoysticks = 0;
-  for (let peer in joystickDataByPeer) {
-    totalJoysticks += joystickDataByPeer[peer].length;
-  }
-  globalStats.totalJoysticks = totalJoysticks;
 
   let candidatePairBytes = 0;
   let outboundRtpBytes = 0;
@@ -295,7 +286,6 @@ setInterval(async () => {
   if (statsDiv) {
     statsDiv.innerHTML = `
       <p>Peering Activo: ${globalStats.connectedPeers}</p>
-      <p>Joysticks Conectados: ${globalStats.totalJoysticks}</p>
       <p>Candidate Pair Enviado: ${(
         globalStats.candidatePairBytes /
         (1024 * 1024)

@@ -97,8 +97,6 @@ function sendToVigembus(data) {
 }
 
 function disconnectJoysticks(targetId) {
-  console.log(controllers);
-
   for (const key in controllers) {
     if (key.startsWith(targetId)) {
       if (
@@ -108,7 +106,6 @@ function disconnectJoysticks(targetId) {
         controllers[key].disconnect();
       }
       delete controllers[key];
-      console.log(`Joystick with id "${key}" disconnected.`);
     }
   }
 }

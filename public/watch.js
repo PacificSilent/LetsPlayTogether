@@ -55,7 +55,6 @@ socket.on("admin-ping", (data) => {
 });
 
 socket.on("disconnectPeer", (id) => {
-  console.log(`Recibido disconnectPeer para ${id}. Cerrando conexión...`);
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
