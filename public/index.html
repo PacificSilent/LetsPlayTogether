@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <title>Lets Play Together</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -75,6 +77,23 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((registration) => {
+              console.log(
+                "Service Worker registrado con scope:",
+                registration.scope
+              );
+            })
+            .catch((error) => {
+              console.error("Error al registrar el Service Worker:", error);
+            });
+        });
+      }
+    </script>
     <script>
       // Limpiar la cookie de aprobación al cargar la página
       window.addEventListener("load", () => {

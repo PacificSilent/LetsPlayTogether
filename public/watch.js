@@ -81,19 +81,6 @@ window.addEventListener("beforeunload", clearApprovalAndClose);
 window.addEventListener("unload", clearApprovalAndClose);
 window.addEventListener("pagehide", clearApprovalAndClose);
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then((registration) => {
-        console.log("ServiceWorker registered: ", registration);
-      })
-      .catch((registrationError) => {
-        console.log("ServiceWorker registration failed: ", registrationError);
-      });
-  });
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   // Panel de opciones y control del video
   const optionsPanel = document.getElementById("options-panel");

@@ -1,19 +1,20 @@
 {
-  "short_name": "LetsPlayTogether",
+  "short_name": "Lets Play Together",
   "name": "Lets Play Together",
   "icons": [
     {
       "src": "/images/icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
       "src": "/images/icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ],
   "start_url": "/index.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000"

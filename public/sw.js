@@ -1,23 +1,43 @@
-const CACHE_NAME = 'webrtc-videobroadcast-cache-v1';
+const CACHE_NAME = "lpt-cache-v1";
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/socket.io/socket.io.js',
-  '/watch.js'
-  // Agrega otros recursos, por ejemplo, íconos o archivos CSS si es necesario
+  "/index.html",
+  "/broadcast.html",
+  "/watch.html",
+  "/manifest.json",
+  "/socket.io/socket.io.js",
+  "/forceH264.js",
+  "/broadcast.js",
+  // Agrega aquí otros archivos estáticos (CSS, imágenes, etc.)
 ];
 
-self.addEventListener('install', event => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log("Opened cache");
       return cache.addAll(urlsToCache);
     })
   );
 });
 
-self.addEventListener('fetch', event => {
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keyList) =>
+      Promise.all(
+        keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      )
+    )
+  );
+});
+
+self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then(response => response || fetch(event.request))
+    caches.match(event.request).then((response) => {
+      // Devuelve la respuesta del cache si existe, de lo contrario, la obtén de la red.
+      return response || fetch(event.request);
+    })
   );
 });
