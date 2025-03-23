@@ -62,7 +62,6 @@ io.sockets.on("connection", (socket) => {
     socket.to(id).emit("candidate", socket.id, message);
   });
   socket.on("joystick-data", (data) => {
-    console.log("Joystick data received:", data);
     sendToVigembus(data);
   });
   socket.on("disconnect", () => {
@@ -75,14 +74,10 @@ io.sockets.on("connection", (socket) => {
   socket.on("admin-pong", (data) => {
     io.to(broadcaster).emit("admin-pong", data);
   });
-  socket.on("endBroadcast", () => {
-    // Recorrer todos los sockets conectados (peers) y desconectar los joysticks asociados
-    Object.keys(io.sockets.sockets).forEach((socketId) => {
-      if (socketId !== broadcaster) {
-        disconnectJoysticks(socketId);
-      }
-    });
-    socket.broadcast.emit("disconnectPeer", broadcaster);
+  socket.on("admin-disconnect", (targetId) => {
+    // Se envía el evento "disconnectPeer" al socket específico (peer) que se deba desconectar
+    io.to(targetId).emit("disconnectPeer", targetId);
+    disconnectJoysticks(targetId);
   });
 });
 

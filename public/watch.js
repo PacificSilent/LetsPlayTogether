@@ -54,6 +54,14 @@ socket.on("admin-ping", (data) => {
   }
 });
 
+socket.on("disconnectPeer", (id) => {
+  console.log(`Recibido disconnectPeer para ${id}. Cerrando conexión...`);
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+});
+
 window.onunload = window.onbeforeunload = () => {
   socket.close();
   if (peerConnection) peerConnection.close();
@@ -238,6 +246,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const joystickMapping = {};
   const prevValues = {};
   function pollGamepads() {
+    // Sólo enviar datos de joystick si el streaming está activo
+    if (!video.srcObject || !peerConnection) {
+      requestAnimationFrame(pollGamepads);
+      return;
+    }
+
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
     for (let gp of gamepads) {
       if (gp && socket.id) {

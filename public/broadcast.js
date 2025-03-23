@@ -466,9 +466,6 @@ function stopBroadcast() {
         delete peerConnections[peerId];
       }
     });
-    // Notificar que la transmisión ha finalizado
-    socket.emit("endBroadcast");
-
     // Reiniciar el tiempo de streaming
     startTime = null;
   }
