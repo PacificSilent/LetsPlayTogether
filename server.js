@@ -62,6 +62,7 @@ io.sockets.on("connection", (socket) => {
     socket.to(id).emit("candidate", socket.id, message);
   });
   socket.on("joystick-data", (data) => {
+    console.log("Joystick data received:", data);
     sendToVigembus(data);
   });
   socket.on("disconnect", () => {

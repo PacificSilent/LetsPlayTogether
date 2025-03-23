@@ -1,14 +1,14 @@
 let peerConnection;
 const config = {
   iceServers: [
-    { "urls": "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:pacificsilent.localto.net:1546" },
     {
       urls: "turn:pacificsilent.localto.net:1546?transport=tcp",
       username: "test",
       credential: "test",
     },
-  ]
+  ],
 };
 
 const socket = io.connect(window.location.origin);
@@ -19,14 +19,14 @@ socket.on("offer", (id, description) => {
   peerConnection
     .setRemoteDescription(description)
     .then(() => peerConnection.createAnswer())
-    .then(sdp => peerConnection.setLocalDescription(sdp))
+    .then((sdp) => peerConnection.setLocalDescription(sdp))
     .then(() => {
       socket.emit("answer", id, peerConnection.localDescription);
     });
-  peerConnection.ontrack = event => {
+  peerConnection.ontrack = (event) => {
     video.srcObject = event.streams[0];
   };
-  peerConnection.onicecandidate = event => {
+  peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("candidate", id, event.candidate);
     }
@@ -36,7 +36,7 @@ socket.on("offer", (id, description) => {
 socket.on("candidate", (id, candidate) => {
   peerConnection
     .addIceCandidate(new RTCIceCandidate(candidate))
-    .catch(e => console.error(e));
+    .catch((e) => console.error(e));
 });
 
 socket.on("connect", () => {
@@ -47,7 +47,7 @@ socket.on("broadcaster", () => {
   socket.emit("watcher");
 });
 
-socket.on("admin-ping", data => {
+socket.on("admin-ping", (data) => {
   // Responder solo si el target coincide con nuestro socket.id
   if (data.target === socket.id) {
     socket.emit("admin-pong", { peerId: socket.id, pingStart: data.pingStart });
@@ -63,10 +63,10 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
-      .then(registration => {
+      .then((registration) => {
         console.log("ServiceWorker registered: ", registration);
       })
-      .catch(registrationError => {
+      .catch((registrationError) => {
         console.log("ServiceWorker registration failed: ", registrationError);
       });
   });
@@ -79,14 +79,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const unmuteBtn = document.getElementById("unmute-video");
 
   // Toggle del panel de opciones al hacer click en la pantalla
-  document.addEventListener("click", e => {
+  document.addEventListener("click", (e) => {
     if (!optionsPanel.contains(e.target)) {
       optionsPanel.classList.toggle("hidden");
     }
   });
 
   // Toggle de mute/desmute
-  unmuteBtn.addEventListener("click", e => {
+  unmuteBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     videoElem.muted = !videoElem.muted;
     unmuteBtn.textContent = videoElem.muted ? "Desmutear" : "Mutear";
@@ -157,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
       let audioCodec = "";
       let audioSampleRate = 0;
 
-      statsReport.forEach(report => {
+      statsReport.forEach((report) => {
         if (report.type === "inbound-rtp") {
           totalInboundBytes += report.bytesReceived || 0;
           if (report.kind === "video") {
@@ -173,10 +173,18 @@ document.addEventListener("DOMContentLoaded", () => {
             rtt = Math.round(report.currentRoundTripTime * 1000);
           }
         }
-        if (report.type === "codec" && report.mimeType && report.mimeType.startsWith("video/")) {
+        if (
+          report.type === "codec" &&
+          report.mimeType &&
+          report.mimeType.startsWith("video/")
+        ) {
           videoCodec = report.mimeType || videoCodec;
         }
-        if (report.type === "codec" && report.mimeType && report.mimeType.startsWith("audio/")) {
+        if (
+          report.type === "codec" &&
+          report.mimeType &&
+          report.mimeType.startsWith("audio/")
+        ) {
           audioCodec = report.mimeType;
           audioSampleRate = report.clockRate;
         }
@@ -184,12 +192,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const now = Date.now();
       const elapsedSec = (now - prevTime) / 1000;
-      const currentBitrate = elapsedSec > 0 ? ((totalInboundBytes - prevBytes) * 8) / elapsedSec : 0;
+      const currentBitrate =
+        elapsedSec > 0 ? ((totalInboundBytes - prevBytes) * 8) / elapsedSec : 0;
       prevBytes = totalInboundBytes;
       prevTime = now;
 
       joinStats.bytesReceived += totalInboundBytes;
-      const elapsedStreamSec = joinStats.start ? Math.floor((Date.now() - joinStats.start) / 1000) : 0;
+      const elapsedStreamSec = joinStats.start
+        ? Math.floor((Date.now() - joinStats.start) / 1000)
+        : 0;
 
       statsOverlay.innerHTML = `
         <p><strong>FPS:</strong> ${framesPerSecond}</p>
@@ -197,22 +208,29 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Jitter:</strong> ${jitter}</p>
         <p><strong>Resolución:</strong> ${width} x ${height}</p>
         <p><strong>RTT:</strong> ${rtt} ms</p>
-        <p><strong>Bytes Recibidos:</strong> ${(totalInboundBytes / (1024 * 1024)).toFixed(2)} MB</p>
+        <p><strong>Bytes Recibidos:</strong> ${(
+          totalInboundBytes /
+          (1024 * 1024)
+        ).toFixed(2)} MB</p>
         <p><strong>Video Codec:</strong> ${videoCodec}</p>
         <p><strong>Audio Codec:</strong> ${audioCodec}</p>
         <p><strong>Audio Sample Rate:</strong> ${audioSampleRate}</p>
-        <p><strong>Bitrate:</strong> ${(currentBitrate / 1000).toFixed(2)} kbps</p>
+        <p><strong>Bitrate:</strong> ${(currentBitrate / 1000).toFixed(
+          2
+        )} kbps</p>
         <p><strong>Streaming:</strong> ${formatTime(elapsedStreamSec)}</p>
       `;
 
       // Calcula el tiempo de decode y lo agrega a la interfaz
       const decodeTime = performance.now() - decodeStart;
-      statsOverlay.innerHTML += `<p><strong>Decode Time:</strong> ${decodeTime.toFixed(2)} ms</p>`;
+      statsOverlay.innerHTML += `<p><strong>Decode Time:</strong> ${decodeTime.toFixed(
+        2
+      )} ms</p>`;
     } catch (err) {
       console.error("Error al obtener estadísticas:", err);
     }
   }
-  
+
   setInterval(updateClientStats, 1000);
 
   // Opcional: envío de datos de gamepad (si se utiliza)
@@ -222,24 +240,27 @@ document.addEventListener("DOMContentLoaded", () => {
   function pollGamepads() {
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
     for (let gp of gamepads) {
-      if (gp) {
+      if (gp && socket.id) {
         if (!(gp.index in joystickMapping)) {
           if (Object.keys(joystickMapping).length < maxJoysticks) {
             joystickMapping[gp.index] = Object.keys(joystickMapping).length + 1;
           }
         }
         if (gp.index in joystickMapping) {
-          const joystickId = socket.id + '-' + joystickMapping[gp.index];
+          const joystickId = socket.id + "-" + joystickMapping[gp.index];
           const newData = {
             axes: gp.axes,
-            buttons: gp.buttons.map(button => button.value)
+            buttons: gp.buttons.map((button) => button.value),
           };
-          if (!prevValues[joystickId] || JSON.stringify(prevValues[joystickId]) !== JSON.stringify(newData)) {
+          if (
+            !prevValues[joystickId] ||
+            JSON.stringify(prevValues[joystickId]) !== JSON.stringify(newData)
+          ) {
             prevValues[joystickId] = newData;
             const data = {
               id: joystickId,
               axes: newData.axes,
-              buttons: newData.buttons
+              buttons: newData.buttons,
             };
             socket.emit("joystick-data", data);
           }
