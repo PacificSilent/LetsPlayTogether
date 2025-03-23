@@ -22,10 +22,23 @@
         },
       };
     </script>
+    <script>
+      // This script sets a CSS variable for dynamic mobile viewport height
+      const setVhProperty = () => {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty("--vh", `${vh}px`);
+      };
+      setVhProperty();
+      window.addEventListener("resize", setVhProperty);
+    </script>
   </head>
-  <body class="bg-black text-secondary w-screen h-screen">
+  <body
+    class="bg-black text-secondary w-screen"
+    style="height: calc(var(--vh, 1vh) * 100)"
+  >
     <div
       class="video-container fixed top-0 left-0 w-screen h-screen overflow-hidden"
+      style="height: calc(var(--vh, 1vh) * 100)"
     >
       <video
         id="video"
