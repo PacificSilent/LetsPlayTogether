@@ -37,9 +37,16 @@
         />
         <button
           id="connectBtn"
-          class="w-full bg-primary text-white rounded-md py-2 hover:bg-accent"
+          class="w-full bg-primary text-white rounded-md py-2 hover:bg-accent mb-4"
         >
           Conectar
+        </button>
+        <!-- Botón de instalación de PWA, oculto inicialmente -->
+        <button
+          id="installBtn"
+          class="w-full bg-accent text-white rounded-md py-2 hover:bg-blue-700 hidden"
+        >
+          Instalar App
         </button>
       </div>
     </div>
@@ -78,6 +85,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+      // Registra el service worker
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
@@ -93,8 +101,7 @@
             });
         });
       }
-    </script>
-    <script>
+
       // Limpiar la cookie de aprobación al cargar la página
       window.addEventListener("load", () => {
         document.cookie =
@@ -108,7 +115,7 @@
       const messageContent = document.getElementById("messageContent");
       const messageCloseBtn = document.getElementById("messageCloseBtn");
 
-      // Función para mostrar un mensaje en modal
+      // Función para mostrar un mensaje en un modal
       function showMessage(title, message) {
         messageTitle.textContent = title;
         messageContent.textContent = message;
@@ -120,6 +127,7 @@
         messageModal.classList.add("hidden");
       });
 
+      // Evento para el botón Conectar
       document.getElementById("connectBtn").addEventListener("click", () => {
         const nick = document.getElementById("nickname").value.trim();
         if (!nick) {
@@ -142,6 +150,30 @@
           }
         });
       });
+
+      // Manejo del evento beforeinstallprompt para mostrar el botón de instalar
+      let deferredPrompt;
+      window.addEventListener("beforeinstallprompt", (e) => {
+        // Previene que el navegador muestre el prompt automáticamente
+        e.preventDefault();
+        deferredPrompt = e;
+        // Mostrar el botón de instalación
+        document.getElementById("installBtn").classList.remove("hidden");
+      });
+
+      // Evento para el botón de instalación
+      document
+        .getElementById("installBtn")
+        .addEventListener("click", async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt(); // Muestra el prompt de instalación
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // Ocultar el botón de instalación después de la respuesta
+            document.getElementById("installBtn").classList.add("hidden");
+            deferredPrompt = null;
+          }
+        });
     </script>
   </body>
 </html>

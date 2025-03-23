@@ -1,12 +1,9 @@
 const CACHE_NAME = "lpt-cache-v1";
 const urlsToCache = [
   "/index.html",
-  "/broadcast.html",
-  "/watch.html",
   "/manifest.json",
   "/socket.io/socket.io.js",
   "/forceH264.js",
-  "/broadcast.js",
   // Agrega aquí otros archivos estáticos (CSS, imágenes, etc.)
 ];
 
