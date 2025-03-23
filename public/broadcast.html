@@ -21,14 +21,31 @@
     </script>
   </head>
   <body class="bg-dark text-secondary">
-    <div class="flex justify-center">
+    <div class="flex justify-center mt-4">
       <video
         playsinline
         autoplay
         muted
-        class="w-full max-w-md border-4 border-primary"
+        class="w-full max-w-md border-4 border-primary hidden"
       ></video>
     </div>
+
+    <!-- Sección de controles -->
+    <div class="flex justify-center mt-4">
+      <button
+        id="toggleBroadcast"
+        class="bg-accent text-white px-4 py-2 rounded mr-2"
+      >
+        Iniciar Transmisión
+      </button>
+      <button
+        id="changeSource"
+        class="bg-accent text-white px-4 py-2 rounded hidden"
+      >
+        Cambiar origen de video
+      </button>
+    </div>
+
     <div
       id="stats"
       class="fixed bottom-0 left-0 bg-gray-900 bg-opacity-75 text-white p-2 m-2 rounded text-sm"
@@ -46,7 +63,7 @@
       <p>Tiempo de Streaming:</p>
     </div>
 
-    <!-- Nuevo: Lista de peers con administración -->
+    <!-- Lista de peers -->
     <div
       id="peerList"
       class="fixed bottom-0 right-0 bg-gray-900 bg-opacity-75 text-white p-2 m-2 rounded text-sm max-h-60 overflow-auto"

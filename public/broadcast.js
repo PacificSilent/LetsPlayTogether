@@ -5,11 +5,11 @@ const maxBitrate = 10000000; // 10 Mbps
 const dynamicBitrates = {};
 const videoSenders = {};
 const peerConnections = {};
-const joystickDataByPeer = {}; // Declarado al inicio para estar disponible en todos los eventos
-const peerLatencies = {}; // Declarado al inicio
+const joystickDataByPeer = {}; // Disponible en todos los eventos
+const peerLatencies = {}; // Disponible en todos los eventos
 const dynamicResolutions = {};
 
-// Obtener el elemento de video desde el DOM antes de su uso
+// Obtener el elemento de video desde el DOM
 const videoElement = document.querySelector("video");
 
 // Configuración de ICE
@@ -149,14 +149,12 @@ setInterval(() => {
   updatePeerList();
 }, 5000);
 
-// Manejo del streaming
+// Manejo del streaming y obtención de dispositivos
 window.onunload = window.onbeforeunload = () => {
   socket.close();
 };
 
 let startTime = null;
-
-getStream().then(getDevices);
 
 function getDevices() {
   return navigator.mediaDevices.enumerateDevices();
@@ -191,6 +189,7 @@ function gotStream(stream) {
   videoElement.srcObject = stream;
   startTime = Date.now(); // Marcar inicio del streaming
   socket.emit("broadcaster");
+  return stream;
 }
 
 function handleError(error) {
@@ -369,7 +368,6 @@ setInterval(async () => {
           { name: "1080p", scaleFactor: 2 },
           { name: "720p", scaleFactor: 3 },
         ];
-        // Usamos condiciones simples basadas en avgRtt y avgPacketLoss:
         let desiredResolutionLevel;
         if (avgRtt < 0.2 && avgPacketLoss < 2) {
           desiredResolutionLevel = 0; // 4K
@@ -381,13 +379,12 @@ setInterval(async () => {
           desiredResolutionLevel = 3; // 720p
         }
 
-        // Verificamos el nivel actual y actualizamos si es necesario
         const currentResolutionLevel =
           dynamicResolutions[id] !== undefined ? dynamicResolutions[id] : 0;
         let newScaleFactor =
           resolutionLevels[desiredResolutionLevel].scaleFactor;
 
-        // Actualizamos los parámetros solo si alguno cambió
+        // Actualizamos los parámetros solo si cambió bitrate o resolución
         if (
           newBitrate !== currentBitrate ||
           desiredResolutionLevel !== currentResolutionLevel
@@ -403,7 +400,6 @@ setInterval(async () => {
           params.encodings[0].maxFramerate = 60;
           params.encodings[0].networkPriority = "high";
           params.encodings[0].priority = "high";
-          // Nuevo: actualizamos la escala de resolución
           params.encodings[0].scaleResolutionDownBy = newScaleFactor;
 
           sender
@@ -427,3 +423,76 @@ setInterval(async () => {
     }
   }
 }, 1000);
+
+const toggleBtn = document.getElementById("toggleBroadcast");
+const changeBtn = document.getElementById("changeSource");
+let broadcastStream = null;
+
+async function startBroadcast() {
+  try {
+    await getStream();
+    broadcastStream = window.stream;
+
+    // Reemplazar la pista de video en cada conexión existente
+    const newVideoTrack = broadcastStream.getVideoTracks()[0];
+    Object.keys(peerConnections).forEach((id) => {
+      const sender = videoSenders[id];
+      if (sender) {
+        sender.replaceTrack(newVideoTrack);
+      }
+    });
+    videoElement.classList.remove("hidden");
+    changeBtn.classList.remove("hidden");
+
+    toggleBtn.textContent = "Terminar Transmisión";
+  } catch (err) {
+    toggleBtn.textContent = "Iniciar Transmisión";
+    // Mostrar el botón de cambiar origen
+    changeBtn.classList.add("hidden");
+    videoElement.classList.add("hidden");
+    console.error("Error al iniciar la transmisión:", err);
+  }
+}
+
+function stopBroadcast() {
+  if (broadcastStream) {
+    broadcastStream.getTracks().forEach((track) => track.stop());
+    broadcastStream = null;
+    videoElement.srcObject = null;
+    // Ocultar el video y el botón de cambiar origen
+    videoElement.classList.add("hidden");
+    changeBtn.classList.add("hidden");
+    toggleBtn.textContent = "Iniciar Transmisión";
+    // Opcional: Notificar a los peers que se detuvo la transmisión.
+  }
+}
+
+// Handler para el botón de inicio/fin
+toggleBtn.addEventListener("click", async () => {
+  if (!broadcastStream) {
+    await startBroadcast();
+  } else {
+    stopBroadcast();
+  }
+});
+
+// Handler para el botón de cambio de origen de video utilizando getStream()
+changeBtn.addEventListener("click", async () => {
+  if (broadcastStream) {
+    try {
+      await getStream();
+      broadcastStream = window.stream;
+      videoElement.srcObject = broadcastStream;
+      const newVideoTrack = broadcastStream.getVideoTracks()[0];
+      Object.keys(peerConnections).forEach((id) => {
+        const sender = videoSenders[id];
+        if (sender) {
+          sender.replaceTrack(newVideoTrack);
+        }
+      });
+      console.log("Origen de video cambiado.");
+    } catch (err) {
+      console.error("Error al cambiar el origen de video:", err);
+    }
+  }
+});
