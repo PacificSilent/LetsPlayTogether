@@ -2,10 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <!-- Para viewport dinámico en móviles -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lets Play Together</title>
-    <link rel="manifest" href="/manifest.json" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -22,53 +19,110 @@
         },
       };
     </script>
-    <script>
-      // This script sets a CSS variable for dynamic mobile viewport height
-      const setVhProperty = () => {
-        let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty("--vh", `${vh}px`);
-      };
-      setVhProperty();
-      window.addEventListener("resize", setVhProperty);
-    </script>
   </head>
-  <body
-    class="bg-black text-secondary w-screen"
-    style="height: calc(var(--vh, 1vh) * 100)"
-  >
-    <div
-      class="video-container fixed top-0 left-0 w-screen h-screen overflow-hidden"
-      style="height: calc(var(--vh, 1vh) * 100)"
-    >
-      <video
-        id="video"
-        playsinline
-        autoplay
-        muted
-        class="w-full h-full object-contain"
-      ></video>
+  <body class="bg-dark text-secondary">
+    <div class="flex flex-col items-center min-h-screen pt-16">
+      <!-- Título fuera del card -->
+      <h1 class="text-4xl font-bold text-primary mb-8">Lets Play Together</h1>
+      <!-- Card para el ingreso de nick -->
+      <div class="bg-white shadow-xl rounded-lg p-8 w-full max-w-md mx-auto">
+        <p class="mb-4 text-secondary">Ingresa tu nick para jugar:</p>
+        <input
+          type="text"
+          id="nickname"
+          placeholder="Ingresa tu nombre o nick"
+          class="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        <button
+          id="connectBtn"
+          class="w-full bg-primary text-white rounded-md py-2 hover:bg-accent"
+        >
+          Conectar
+        </button>
+      </div>
     </div>
 
-    <!-- Modal de estado -->
+    <!-- Modal de espera -->
     <div
-      id="modal"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 text-white text-2xl font-bold z-50"
+      id="waitingModal"
+      class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden"
     >
-      La transmisión aún no comienza
+      <div class="bg-white rounded-lg p-8 text-center">
+        <h2 class="text-2xl font-bold text-primary mb-4">
+          Esperando confirmación
+        </h2>
+        <p class="text-secondary">
+          Por favor, espera mientras el host aprueba tu conexión...
+        </p>
+      </div>
     </div>
 
-    <!-- Panel de opciones -->
+    <!-- Modal de mensaje (reemplaza alert) -->
     <div
-      id="options-panel"
-      class="fixed top-2 right-2 bg-gray-900 bg-opacity-75 text-white p-4 rounded space-y-2 hidden"
+      id="messageModal"
+      class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden"
     >
-      <button id="unmute-video" class="bg-accent px-4 py-2 rounded">
-        Desmutear
-      </button>
-      <!-- Aquí se pueden insertar otros botones -->
+      <div class="bg-white rounded-lg p-8 text-center">
+        <h2 id="messageTitle" class="text-2xl font-bold text-primary mb-4"></h2>
+        <p id="messageContent" class="text-secondary mb-4"></p>
+        <button
+          id="messageCloseBtn"
+          class="w-full bg-primary text-white rounded-md py-2 hover:bg-accent"
+        >
+          OK
+        </button>
+      </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/watch.js"></script>
+    <script>
+      // Limpiar la cookie de aprobación al cargar la página
+      window.addEventListener("load", () => {
+        document.cookie =
+          "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+      });
+
+      const socket = io();
+      const waitingModal = document.getElementById("waitingModal");
+      const messageModal = document.getElementById("messageModal");
+      const messageTitle = document.getElementById("messageTitle");
+      const messageContent = document.getElementById("messageContent");
+      const messageCloseBtn = document.getElementById("messageCloseBtn");
+
+      // Función para mostrar un mensaje en modal
+      function showMessage(title, message) {
+        messageTitle.textContent = title;
+        messageContent.textContent = message;
+        messageModal.classList.remove("hidden");
+      }
+
+      // Cerrar modal de mensaje al presionar OK
+      messageCloseBtn.addEventListener("click", () => {
+        messageModal.classList.add("hidden");
+      });
+
+      document.getElementById("connectBtn").addEventListener("click", () => {
+        const nick = document.getElementById("nickname").value.trim();
+        if (!nick) {
+          showMessage("Error", "Por favor, ingresa un nombre.");
+          return;
+        }
+        // Mostrar el modal de espera
+        waitingModal.classList.remove("hidden");
+        socket.emit("peerRequest", { nick });
+
+        socket.on("peerApproval", (data) => {
+          // Ocultar el modal de espera
+          waitingModal.classList.add("hidden");
+          if (data.approved) {
+            // Se establece la cookie aprobada y se redirige a watch.html
+            document.cookie = "approved=1; path=/";
+            window.location.href = "/watch.html";
+          } else {
+            showMessage("Rechazado", "Solicitud rechazada por el broadcaster.");
+          }
+        });
+      });
+    </script>
   </body>
 </html>

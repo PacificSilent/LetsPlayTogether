@@ -1,7 +1,9 @@
 const express = require("express");
+const cookieParser = require("cookie-parser"); // Se importa cookie-parser
 const app = express();
-require("dotenv").config();
+app.use(cookieParser()); // Se usa cookie-parser
 
+require("dotenv").config();
 const { sendToVigembus, disconnectJoysticks } = require("./vigembus");
 
 function auth(req, res, next) {
@@ -33,6 +35,14 @@ app.get("/broadcast.html", auth, (req, res) => {
   res.sendFile(__dirname + "/public/broadcast.html");
 });
 
+// Nueva ruta protegida para watch.html, debe estar antes del middleware de archivos estáticos.
+app.get("/watch.html", (req, res) => {
+  if (req.cookies && req.cookies.approved === "1") {
+    return res.sendFile(__dirname + "/public/watch.html");
+  }
+  return res.status(403).send("Acceso denegado.");
+});
+
 let broadcaster;
 const port = 4000;
 
@@ -41,6 +51,7 @@ const server = http.createServer(app);
 
 const io = require("socket.io")(server);
 
+// Se recomienda dejar la ruta de archivos estáticos después de las rutas protegidas
 app.use(express.static(__dirname + "/public"));
 
 io.sockets.on("error", (e) => console.log(e));
@@ -75,9 +86,23 @@ io.sockets.on("connection", (socket) => {
     io.to(broadcaster).emit("admin-pong", data);
   });
   socket.on("admin-disconnect", (targetId) => {
-    // Se envía el evento "disconnectPeer" al socket específico (peer) que se deba desconectar
     io.to(targetId).emit("disconnectPeer", targetId);
     disconnectJoysticks(targetId);
+  });
+
+  socket.on("broadcasterJoin", () => {
+    socket.join("broadcaster");
+  });
+
+  socket.on("peerRequest", (data) => {
+    io.to("broadcaster").emit("newPeerRequest", {
+      peerId: socket.id,
+      nick: data.nick,
+    });
+  });
+
+  socket.on("handlePeerRequest", (data) => {
+    io.to(data.peerId).emit("peerApproval", { approved: data.approved });
   });
 });
 

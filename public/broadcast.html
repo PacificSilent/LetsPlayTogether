@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Broadcaster</title>
     <meta charset="UTF-8" />
+    <title>Broadcast - LetsPlayTogether</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -21,6 +21,7 @@
     </script>
   </head>
   <body class="bg-dark text-secondary">
+    <h1>Transmisión en vivo</h1>
     <div class="flex justify-center mt-4">
       <video
         playsinline
@@ -70,6 +71,12 @@
       <h3 class="font-bold">Peers Conectados</h3>
       <ul id="peers"></ul>
     </div>
+
+    <div id="peerRequests">
+      <h2>Solicitudes de conexión</h2>
+      <ul id="peerList"></ul>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="/forceH264.js"></script>
     <script src="/broadcast.js"></script>

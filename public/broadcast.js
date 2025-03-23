@@ -26,7 +26,28 @@ const config = {
   ],
 };
 
-const socket = io.connect(window.location.origin);
+const socket = io();
+
+// Identificarse como broadcaster para recibir solicitudes
+socket.emit("broadcasterJoin");
+
+// Escuchar las solicitudes de conexión entrantes
+socket.on("newPeerRequest", (data) => {
+  const peerList = document.getElementById("peerList");
+  const li = document.createElement("li");
+  li.id = data.peerId;
+  li.innerHTML = `<strong>${data.nick}</strong>
+    <button onclick="handlePeer('${data.peerId}', true)">Aprobar</button>
+    <button onclick="handlePeer('${data.peerId}', false)">Rechazar</button>`;
+  peerList.appendChild(li);
+});
+
+window.handlePeer = function (peerId, approved) {
+  socket.emit("handlePeerRequest", { peerId, approved });
+  // Eliminar la solicitud procesada de la lista
+  const li = document.getElementById(peerId);
+  if (li) li.remove();
+};
 
 // Manejo de mensajes de socket
 socket.on("answer", (id, description) => {

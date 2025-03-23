@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Para viewport dinámico en móviles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lets Play Together</title>
+    <link rel="manifest" href="/manifest.json" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              secondary: "#8ECAE6",
+              accent: "#219EBC",
+              dark: "#023047",
+              warning: "#FFB703",
+              primary: "#FB8500",
+            },
+          },
+        },
+      };
+    </script>
+    <script>
+      // This script sets a CSS variable for dynamic mobile viewport height
+      const setVhProperty = () => {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty("--vh", `${vh}px`);
+      };
+      setVhProperty();
+      window.addEventListener("resize", setVhProperty);
+    </script>
+  </head>
+  <body
+    class="bg-black text-secondary w-screen"
+    style="height: calc(var(--vh, 1vh) * 100)"
+  >
+    <div
+      class="video-container fixed top-0 left-0 w-screen h-screen overflow-hidden"
+      style="height: calc(var(--vh, 1vh) * 100)"
+    >
+      <video
+        id="video"
+        playsinline
+        autoplay
+        muted
+        class="w-full h-full object-contain"
+      ></video>
+    </div>
+
+    <!-- Modal de estado -->
+    <div
+      id="modal"
+      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 text-white text-2xl font-bold z-50"
+    >
+      La transmisión aún no comienza
+    </div>
+
+    <!-- Panel de opciones -->
+    <div
+      id="options-panel"
+      class="fixed top-2 right-2 bg-gray-900 bg-opacity-75 text-white p-4 rounded space-y-2 hidden"
+    >
+      <button id="unmute-video" class="bg-accent px-4 py-2 rounded">
+        Desmutear
+      </button>
+      <!-- Aquí se pueden insertar otros botones -->
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/watch.js"></script>
+  </body>
+</html>

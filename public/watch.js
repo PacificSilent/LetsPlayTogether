@@ -57,19 +57,29 @@ socket.on("admin-ping", (data) => {
 });
 
 socket.on("disconnectPeer", (peerId) => {
-  // Si el broadcaster se desconecta se asume que se terminó la sesión actual
   modal.style.display = "flex";
   modal.textContent = "Has sido desconectado de la sesión";
+  clearApprovalAndClose();
+});
+
+function clearApprovalAndClose() {
+  document.cookie = "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+  if (socket && socket.connected) {
+    socket.close();
+  }
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
   }
-});
 
-window.onunload = window.onbeforeunload = () => {
-  socket.close();
-  if (peerConnection) peerConnection.close();
-};
+  setTimeout(() => {
+    window.location.href = "/";
+  }, 1500);
+}
+
+window.addEventListener("beforeunload", clearApprovalAndClose);
+window.addEventListener("unload", clearApprovalAndClose);
+window.addEventListener("pagehide", clearApprovalAndClose);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
