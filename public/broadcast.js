@@ -36,9 +36,19 @@ socket.on("newPeerRequest", (data) => {
   const peerList = document.getElementById("peerList");
   const li = document.createElement("li");
   li.id = data.peerId;
-  li.innerHTML = `<strong>${data.nick}</strong>
-    <button onclick="handlePeer('${data.peerId}', true)">Aprobar</button>
-    <button onclick="handlePeer('${data.peerId}', false)">Rechazar</button>`;
+  li.innerHTML = `
+    <div class="flex items-center justify-between bg-gray-800 rounded-lg p-4 mb-2">
+      <span class="font-bold text-primary text-lg">${data.nick}</span>
+      <div>
+        <button onclick="handlePeer('${data.peerId}', true)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded mr-2">
+          Aprobar
+        </button>
+        <button onclick="handlePeer('${data.peerId}', false)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
+          Rechazar
+        </button>
+      </div>
+    </div>
+  `;
   peerList.appendChild(li);
 });
 
@@ -306,29 +316,44 @@ setInterval(async () => {
   const statsDiv = document.getElementById("stats");
   if (statsDiv) {
     statsDiv.innerHTML = `
-      <p>Peering Activo: ${globalStats.connectedPeers}</p>
-      <p>Candidate Pair Enviado: ${(
+  <div class="bg-gray-800 bg-opacity-70 p-4 rounded-lg text-white w-full max-w-md mx-auto">
+    <p class="font-bold text-lg mb-4 text-center">Estadísticas Globales</p>
+    <div class="grid grid-cols-1 gap-2 text-sm">
+      <p class="border-b border-gray-600 pb-1">Peering Activo: ${
+        globalStats.connectedPeers
+      }</p>
+      <p class="border-b border-gray-600 pb-1">Candidate Pair Enviado: ${(
         globalStats.candidatePairBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p>Outbound RTP Enviado: ${(
+      <p class="border-b border-gray-600 pb-1">Outbound RTP Enviado: ${(
         globalStats.outboundRtpBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p>Bytes Enviados (Transport): ${(
+      <p class="border-b border-gray-600 pb-1">Bytes Enviados (Transport): ${(
         globalStats.transportSentBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p>Bytes Recibidos (Transport): ${(
+      <p class="border-b border-gray-600 pb-1">Bytes Recibidos (Transport): ${(
         globalStats.transportReceivedBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p>Cantidad de Reportes: ${globalStats.reportCount}</p>
-      <p>Paquetes Enviados: ${globalStats.packages}</p>
-      <p>Promedio de Pérdida de Paquetes: ${globalStats.avgPacketLoss}</p>
-      <p>Promedio de RTT: ${globalStats.avgRtt}</p>
-      <p>Tiempo de Streaming: ${globalStats.streamingTime}</p>
-    `;
+      <p class="border-b border-gray-600 pb-1">Cantidad de Reportes: ${
+        globalStats.reportCount
+      }</p>
+      <p class="border-b border-gray-600 pb-1">Paquetes Enviados: ${
+        globalStats.packages
+      }</p>
+      <p class="border-b border-gray-600 pb-1">Promedio de Pérdida de Paquetes: ${
+        globalStats.avgPacketLoss
+      }</p>
+      <p class="border-b border-gray-600 pb-1">Promedio de RTT: ${
+        globalStats.avgRtt
+      }</p>
+      <p class="mt-2">Tiempo de Streaming: ${globalStats.streamingTime}</p>
+    </div>
+  </div>
+`;
   }
 
   // Ajuste individual de bitrate y resolución por peer

@@ -2,7 +2,8 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Broadcast - LetsPlayTogether</title>
+    <title>Panel de Admin - Broadcast</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -21,60 +22,62 @@
     </script>
   </head>
   <body class="bg-dark text-secondary">
-    <h1>Transmisión en vivo</h1>
-    <div class="flex justify-center mt-4">
-      <video
-        playsinline
-        autoplay
-        muted
-        class="w-full max-w-md border-4 border-primary hidden"
-      ></video>
-    </div>
-
-    <!-- Sección de controles -->
-    <div class="flex justify-center mt-4">
-      <button
-        id="toggleBroadcast"
-        class="bg-accent text-white px-4 py-2 rounded mr-2"
-      >
-        Iniciar Transmisión
-      </button>
-      <button
-        id="changeSource"
-        class="bg-accent text-white px-4 py-2 rounded hidden"
-      >
-        Cambiar origen de video
-      </button>
-    </div>
-
-    <div
-      id="stats"
-      class="fixed bottom-0 left-0 bg-gray-900 bg-opacity-75 text-white p-2 m-2 rounded text-sm"
+    <!-- Header -->
+    <header
+      class="p-4 bg-gray-800 text-white flex justify-between items-center"
     >
-      <p>Peering Activo:</p>
-      <p>Candidate Pair Enviado:</p>
-      <p>Outbound RTP Enviado:</p>
-      <p>Bytes Enviados (Transport):</p>
-      <p>Bytes Recibidos (Transport):</p>
-      <p>Cantidad de Reportes:</p>
-      <p>Paquetes Enviados:</p>
-      <p>Promedio de Pérdida de Paquetes:</p>
-      <p>Promedio de RTT:</p>
-      <p>Tiempo de Streaming:</p>
-    </div>
+      <h1 class="text-3xl font-bold">Panel de Admin - Broadcast</h1>
+    </header>
 
-    <!-- Lista de peers -->
-    <div
-      id="peerList"
-      class="fixed bottom-0 right-0 bg-gray-900 bg-opacity-75 text-white p-2 m-2 rounded text-sm max-h-60 overflow-auto"
-    >
-      <h3 class="font-bold">Peers Conectados</h3>
-      <ul id="peers"></ul>
-    </div>
+    <!-- Área principal -->
+    <div class="flex flex-1 min-h-screen">
+      <!-- Contenido principal (video, stats y controles) -->
+      <main class="flex-1 p-4">
+        <div class="flex flex-col items-center">
+          <video
+            playsinline
+            autoplay
+            muted
+            class="w-full max-w-md border-4 border-primary hidden"
+          ></video>
+        </div>
 
-    <div id="peerRequests">
-      <h2>Solicitudes de conexión</h2>
-      <ul id="peerList"></ul>
+        <!-- Sección de controles -->
+        <div class="flex justify-center mt-6 space-x-4">
+          <button
+            id="toggleBroadcast"
+            class="bg-accent text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Iniciar Transmisión
+          </button>
+          <button
+            id="changeSource"
+            class="bg-accent text-white px-4 py-2 rounded hidden hover:bg-blue-700"
+          >
+            Cambiar origen de video
+          </button>
+        </div>
+        <div class="flex flex-col items-center">
+          <!-- Sección de estadísticas debajo del video, centradas -->
+          <div id="stats" class="text-sm mt-4 text-center">
+            <!-- Se actualizará desde broadcast.js -->
+          </div>
+        </div>
+      </main>
+
+      <!-- Sidebar: Lista de peers y solicitudes -->
+      <aside
+        class="w-1/3 p-4 bg-gray-900 bg-opacity-75 text-white overflow-y-auto"
+      >
+        <section id="peersSection" class="mb-6">
+          <h2 class="text-2xl font-bold mb-4">Peers Conectados</h2>
+          <ul id="peers" class="space-y-2"></ul>
+        </section>
+        <section id="requestsSection">
+          <h2 class="text-xl font-bold mb-2">Solicitudes de conexión</h2>
+          <ul id="peerList" class="space-y-2"></ul>
+        </section>
+      </aside>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
