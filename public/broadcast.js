@@ -5,14 +5,15 @@ const maxBitrate = 10000000; // 10 Mbps
 const dynamicBitrates = {};
 const videoSenders = {};
 const peerConnections = {};
-const joystickDataByPeer = {}; // Disponible en todos los eventos
-const peerLatencies = {}; // Disponible en todos los eventos
+const joystickDataByPeer = {}; // Información de joysticks por peer
+const peerLatencies = {}; // Latencias de cada peer
 const dynamicResolutions = {};
 
 // Obtener el elemento de video desde el DOM
 const videoElement = document.querySelector("video");
+const toggleBtn = document.getElementById("toggleBroadcast");
+const changeBtn = document.getElementById("changeSource");
 
-// Configuración de ICE
 const config = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -94,7 +95,6 @@ socket.on("disconnectPeer", (id) => {
 });
 
 socket.on("joystick-data", (data) => {
-  // Se asume que data.id tiene el formato "peerId-<numero>"
   const parts = data.id.split("-");
   const peerId = parts[0];
   if (!joystickDataByPeer[peerId]) {
@@ -151,6 +151,10 @@ setInterval(() => {
 
 // Manejo del streaming y obtención de dispositivos
 window.onunload = window.onbeforeunload = () => {
+  // Al cerrar la ventana, si hay transmisión activa se cierra
+  if (broadcastStream) {
+    stopBroadcast();
+  }
   socket.close();
 };
 
@@ -213,18 +217,14 @@ const globalStats = {
 };
 
 setInterval(async () => {
-  // 1. Número de peers conectados
+  // Acumulación de métricas globales
   globalStats.connectedPeers = Object.keys(peerConnections).length;
-
-  // 2. Número total de joysticks conectados
   let totalJoysticks = 0;
   for (let peer in joystickDataByPeer) {
     totalJoysticks += joystickDataByPeer[peer].length;
   }
   globalStats.totalJoysticks = totalJoysticks;
 
-  // 3. Acumulación de métricas de cada peerConnection
-  let totalBytes = 0;
   let candidatePairBytes = 0;
   let outboundRtpBytes = 0;
   let transportSentBytes = 0;
@@ -247,7 +247,6 @@ setInterval(async () => {
         }
         if (report.type === "outbound-rtp" && !report.isRemote) {
           outboundRtpBytes += report.bytesSent || 0;
-          totalBytes += report.bytesSent || 0;
         }
         if (report.type === "transport" && report.transportId === "T01") {
           if (report.bytesSent) {
@@ -268,7 +267,7 @@ setInterval(async () => {
         }
       });
     } catch (e) {
-      console.error("Error en getStats para peer ", id, e);
+      console.error("Error en getStats para peer", id, e);
     }
   }
 
@@ -283,7 +282,7 @@ setInterval(async () => {
   globalStats.avgRtt =
     rttCount > 0 ? (totalRoundTripTime / rttCount).toFixed(2) + " sec" : "N/A";
 
-  // 4. Tiempo de streaming
+  // Tiempo de streaming
   const elapsedMs = startTime ? Date.now() - startTime : 0;
   const seconds = Math.floor((elapsedMs / 1000) % 60);
   const minutes = Math.floor((elapsedMs / (1000 * 60)) % 60);
@@ -292,7 +291,6 @@ setInterval(async () => {
     .toString()
     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-  // Actualización de la UI de estadísticas
   const statsDiv = document.getElementById("stats");
   if (statsDiv) {
     statsDiv.innerHTML = `
@@ -322,7 +320,7 @@ setInterval(async () => {
     `;
   }
 
-  // Recorrer cada peer para obtener estadísticas individuales y ajustar el bitrate
+  // Ajuste individual de bitrate y resolución por peer
   for (let id in peerConnections) {
     try {
       const pc = peerConnections[id];
@@ -351,7 +349,6 @@ setInterval(async () => {
         packetLossCount > 0 ? totalPacketLoss / packetLossCount : 0;
 
       if (videoSenders[id]) {
-        // --- Ajuste del bitrate existente ---
         let currentBitrate = dynamicBitrates[id];
         let newBitrate = currentBitrate;
         if (avgRtt > 0.5 || avgPacketLoss > 5) {
@@ -360,8 +357,6 @@ setInterval(async () => {
           newBitrate = Math.min(currentBitrate * 1.05, maxBitrate);
         }
 
-        // --- Selección de nivel de resolución ---
-        //  Niveles definidos: 0: 4K, 1: 1440p, 2: 1080p, 3: 720p
         const resolutionLevels = [
           { name: "4K", scaleFactor: 1 },
           { name: "1440p", scaleFactor: 1.5 },
@@ -384,7 +379,6 @@ setInterval(async () => {
         let newScaleFactor =
           resolutionLevels[desiredResolutionLevel].scaleFactor;
 
-        // Actualizamos los parámetros solo si cambió bitrate o resolución
         if (
           newBitrate !== currentBitrate ||
           desiredResolutionLevel !== currentResolutionLevel
@@ -419,13 +413,13 @@ setInterval(async () => {
         }
       }
     } catch (e) {
-      console.error("Error en getStats para peer ", id, e);
+      console.error("Error en getStats para peer", id, e);
     }
   }
 }, 1000);
 
-const toggleBtn = document.getElementById("toggleBroadcast");
-const changeBtn = document.getElementById("changeSource");
+// Manejo de transmisión
+
 let broadcastStream = null;
 
 async function startBroadcast() {
@@ -447,7 +441,6 @@ async function startBroadcast() {
     toggleBtn.textContent = "Terminar Transmisión";
   } catch (err) {
     toggleBtn.textContent = "Iniciar Transmisión";
-    // Mostrar el botón de cambiar origen
     changeBtn.classList.add("hidden");
     videoElement.classList.add("hidden");
     console.error("Error al iniciar la transmisión:", err);
@@ -459,15 +452,28 @@ function stopBroadcast() {
     broadcastStream.getTracks().forEach((track) => track.stop());
     broadcastStream = null;
     videoElement.srcObject = null;
+
     // Ocultar el video y el botón de cambiar origen
     videoElement.classList.add("hidden");
     changeBtn.classList.add("hidden");
     toggleBtn.textContent = "Iniciar Transmisión";
-    // Opcional: Notificar a los peers que se detuvo la transmisión.
+
+    // Cerrar todas las conexiones peer y notificar al servidor para desconectar joysticks
+    Object.keys(peerConnections).forEach((peerId) => {
+      if (peerConnections[peerId]) {
+        peerConnections[peerId].close();
+        socket.emit("admin-disconnect", peerId);
+        delete peerConnections[peerId];
+      }
+    });
+    // Notificar que la transmisión ha finalizado
+    socket.emit("endBroadcast");
+
+    // Reiniciar el tiempo de streaming
+    startTime = null;
   }
 }
 
-// Handler para el botón de inicio/fin
 toggleBtn.addEventListener("click", async () => {
   if (!broadcastStream) {
     await startBroadcast();
@@ -476,7 +482,6 @@ toggleBtn.addEventListener("click", async () => {
   }
 });
 
-// Handler para el botón de cambio de origen de video utilizando getStream()
 changeBtn.addEventListener("click", async () => {
   if (broadcastStream) {
     try {
