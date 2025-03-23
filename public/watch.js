@@ -12,7 +12,8 @@ const config = {
 };
 
 const socket = io.connect(window.location.origin);
-const video = document.querySelector("video");
+const video = document.getElementById("video");
+const modal = document.getElementById("modal");
 
 socket.on("offer", (id, description) => {
   peerConnection = new RTCPeerConnection(config);
@@ -25,6 +26,7 @@ socket.on("offer", (id, description) => {
     });
   peerConnection.ontrack = (event) => {
     video.srcObject = event.streams[0];
+    modal.style.display = "none";
   };
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
@@ -54,7 +56,10 @@ socket.on("admin-ping", (data) => {
   }
 });
 
-socket.on("disconnectPeer", (id) => {
+socket.on("disconnectPeer", (peerId) => {
+  // Si el broadcaster se desconecta se asume que se terminó la sesión actual
+  modal.style.display = "flex";
+  modal.textContent = "Has sido desconectado de la sesión";
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;

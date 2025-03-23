@@ -48,6 +48,15 @@
         class="w-full h-full object-contain"
       ></video>
     </div>
+
+    <!-- Modal de estado -->
+    <div
+      id="modal"
+      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 text-white text-2xl font-bold z-50"
+    >
+      La transmisión aún no comienza
+    </div>
+
     <!-- Panel de opciones -->
     <div
       id="options-panel"
@@ -56,8 +65,9 @@
       <button id="unmute-video" class="bg-accent px-4 py-2 rounded">
         Desmutear
       </button>
-      <!-- El botón de estadísticas se insertará vía watch.js -->
+      <!-- Aquí se pueden insertar otros botones -->
     </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="/watch.js"></script>
   </body>
