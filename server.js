@@ -75,8 +75,13 @@ io.sockets.on("connection", (socket) => {
     io.to(broadcaster).emit("admin-pong", data);
   });
   socket.on("endBroadcast", () => {
+    // Recorrer todos los sockets conectados (peers) y desconectar los joysticks asociados
+    Object.keys(io.sockets.sockets).forEach((socketId) => {
+      if (socketId !== broadcaster) {
+        disconnectJoysticks(socketId);
+      }
+    });
     socket.broadcast.emit("disconnectPeer", broadcaster);
-    disconnectJoysticks("");
   });
 });
 
