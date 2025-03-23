@@ -7,6 +7,7 @@ const videoSenders = {};
 const peerConnections = {};
 const joystickDataByPeer = {}; // Declarado al inicio para estar disponible en todos los eventos
 const peerLatencies = {}; // Declarado al inicio
+const dynamicResolutions = {};
 
 // Obtener el elemento de video desde el DOM antes de su uso
 const videoElement = document.querySelector("video");
@@ -174,8 +175,8 @@ function getScreen() {
   return navigator.mediaDevices.getDisplayMedia({
     video: {
       frameRate: { ideal: 60, max: 60 },
-      width: { ideal: 1920, max: 1920 },
-      height: { ideal: 1080, max: 1080 },
+      width: { ideal: 3840, max: 3840 },
+      height: { ideal: 2160, max: 2160 },
     },
     audio: {
       noiseSuppression: false,
@@ -339,7 +340,7 @@ setInterval(async () => {
             rttCount++;
           }
           if (report.fractionLost !== undefined) {
-            const packetLoss = report.fractionLost * 100;
+            const packetLoss = (report.fractionLost / 256) * 100;
             totalPacketLoss += packetLoss;
             packetLossCount++;
           }
@@ -351,6 +352,7 @@ setInterval(async () => {
         packetLossCount > 0 ? totalPacketLoss / packetLossCount : 0;
 
       if (videoSenders[id]) {
+        // --- Ajuste del bitrate existente ---
         let currentBitrate = dynamicBitrates[id];
         let newBitrate = currentBitrate;
         if (avgRtt > 0.5 || avgPacketLoss > 5) {
@@ -359,8 +361,39 @@ setInterval(async () => {
           newBitrate = Math.min(currentBitrate * 1.05, maxBitrate);
         }
 
-        if (newBitrate !== currentBitrate) {
+        // --- Selección de nivel de resolución ---
+        //  Niveles definidos: 0: 4K, 1: 1440p, 2: 1080p, 3: 720p
+        const resolutionLevels = [
+          { name: "4K", scaleFactor: 1 },
+          { name: "1440p", scaleFactor: 1.5 },
+          { name: "1080p", scaleFactor: 2 },
+          { name: "720p", scaleFactor: 3 },
+        ];
+        // Usamos condiciones simples basadas en avgRtt y avgPacketLoss:
+        let desiredResolutionLevel;
+        if (avgRtt < 0.2 && avgPacketLoss < 2) {
+          desiredResolutionLevel = 0; // 4K
+        } else if (avgRtt < 0.3 && avgPacketLoss < 3) {
+          desiredResolutionLevel = 1; // 1440p
+        } else if (avgRtt < 0.5 && avgPacketLoss < 5) {
+          desiredResolutionLevel = 2; // 1080p
+        } else {
+          desiredResolutionLevel = 3; // 720p
+        }
+
+        // Verificamos el nivel actual y actualizamos si es necesario
+        const currentResolutionLevel =
+          dynamicResolutions[id] !== undefined ? dynamicResolutions[id] : 0;
+        let newScaleFactor =
+          resolutionLevels[desiredResolutionLevel].scaleFactor;
+
+        // Actualizamos los parámetros solo si alguno cambió
+        if (
+          newBitrate !== currentBitrate ||
+          desiredResolutionLevel !== currentResolutionLevel
+        ) {
           dynamicBitrates[id] = newBitrate;
+          dynamicResolutions[id] = desiredResolutionLevel;
           const sender = videoSenders[id];
           const params = sender.getParameters();
           if (!params.encodings) {
@@ -370,15 +403,22 @@ setInterval(async () => {
           params.encodings[0].maxFramerate = 60;
           params.encodings[0].networkPriority = "high";
           params.encodings[0].priority = "high";
+          // Nuevo: actualizamos la escala de resolución
+          params.encodings[0].scaleResolutionDownBy = newScaleFactor;
+
           sender
             .setParameters(params)
             .then(() => {
               console.log(
-                `Se actualizó el bitrate para peer ${id} a ${newBitrate} bps`
+                `Peer ${id}: Bitrate actualizado a ${newBitrate} bps y resolución ajustada a ${resolutionLevels[desiredResolutionLevel].name} (scale: ${newScaleFactor}).`
               );
             })
             .catch((err) => {
-              console.error("Error al actualizar bitrate para peer", id, err);
+              console.error(
+                "Error al actualizar parámetros para peer",
+                id,
+                err
+              );
             });
         }
       }
