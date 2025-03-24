@@ -1,13 +1,7 @@
-const baseBitrate = 5000000; // 5 Mbps
-const minBitrate = 1000000; // 1 Mbps
-const maxBitrate = 10000000; // 10 Mbps
-
-const dynamicBitrates = {};
 const videoSenders = {};
 const peerConnections = {};
 const joystickDataByPeer = {}; // Información de joysticks por peer
 const peerLatencies = {}; // Latencias de cada peer
-const dynamicResolutions = {};
 
 // Obtener el elemento de video desde el DOM
 const videoElement = document.querySelector("video");
@@ -77,22 +71,19 @@ socket.on("watcher", (id) => {
     .find((sender) => sender.track && sender.track.kind === "video");
   if (videoSender) {
     videoSenders[id] = videoSender;
-    dynamicBitrates[id] = baseBitrate;
     const params = videoSender.getParameters();
     if (!params.encodings) {
       params.encodings = [{}];
     }
-    params.encodings[0].maxBitrate = dynamicBitrates[id];
+    params.encodings[0].maxBitrate = 6000000; // 6 Mbps
     params.encodings[0].maxFramerate = 60;
     params.encodings[0].networkPriority = "high";
     params.encodings[0].priority = "high";
+    params.degradationPreference = "balanced";
     videoSender
       .setParameters(params)
       .then(() => {
-        console.log(
-          "Parámetros de codificación actualizados con bitrate base:",
-          dynamicBitrates[id]
-        );
+        console.log("Parámetros de codificación actualizados para peer", id);
       })
       .catch((err) => {
         console.error("Error al actualizar los parámetros:", err);
@@ -205,8 +196,8 @@ function getScreen() {
   return navigator.mediaDevices.getDisplayMedia({
     video: {
       frameRate: { ideal: 60, max: 60 },
-      width: { ideal: 3840, max: 3840 },
-      height: { ideal: 2160, max: 2160 },
+      width: { ideal: 1920, max: 1920 },
+      height: { ideal: 1080, max: 1080 },
     },
     audio: {
       noiseSuppression: false,
@@ -354,103 +345,6 @@ setInterval(async () => {
     </div>
   </div>
 `;
-  }
-
-  // Ajuste individual de bitrate y resolución por peer
-  for (let id in peerConnections) {
-    try {
-      const pc = peerConnections[id];
-      const stats = await pc.getStats();
-      let totalRoundTripTime = 0;
-      let rttCount = 0;
-      let totalPacketLoss = 0;
-      let packetLossCount = 0;
-
-      stats.forEach((report) => {
-        if (report.type === "remote-inbound-rtp") {
-          if (report.roundTripTime) {
-            totalRoundTripTime += report.roundTripTime;
-            rttCount++;
-          }
-          if (report.fractionLost !== undefined) {
-            const packetLoss = (report.fractionLost / 256) * 100;
-            totalPacketLoss += packetLoss;
-            packetLossCount++;
-          }
-        }
-      });
-
-      const avgRtt = rttCount > 0 ? totalRoundTripTime / rttCount : 0;
-      const avgPacketLoss =
-        packetLossCount > 0 ? totalPacketLoss / packetLossCount : 0;
-
-      if (videoSenders[id]) {
-        let currentBitrate = dynamicBitrates[id];
-        let newBitrate = currentBitrate;
-        if (avgRtt > 0.5 || avgPacketLoss > 5) {
-          newBitrate = Math.max(currentBitrate * 0.8, minBitrate);
-        } else {
-          newBitrate = Math.min(currentBitrate * 1.05, maxBitrate);
-        }
-
-        const resolutionLevels = [
-          { name: "4K", scaleFactor: 1 },
-          { name: "1440p", scaleFactor: 1.5 },
-          { name: "1080p", scaleFactor: 2 },
-          { name: "720p", scaleFactor: 3 },
-        ];
-        let desiredResolutionLevel;
-        if (avgRtt < 0.2 && avgPacketLoss < 2) {
-          desiredResolutionLevel = 0; // 4K
-        } else if (avgRtt < 0.3 && avgPacketLoss < 3) {
-          desiredResolutionLevel = 1; // 1440p
-        } else if (avgRtt < 0.5 && avgPacketLoss < 5) {
-          desiredResolutionLevel = 2; // 1080p
-        } else {
-          desiredResolutionLevel = 3; // 720p
-        }
-
-        const currentResolutionLevel =
-          dynamicResolutions[id] !== undefined ? dynamicResolutions[id] : 0;
-        let newScaleFactor =
-          resolutionLevels[desiredResolutionLevel].scaleFactor;
-
-        if (
-          newBitrate !== currentBitrate ||
-          desiredResolutionLevel !== currentResolutionLevel
-        ) {
-          dynamicBitrates[id] = newBitrate;
-          dynamicResolutions[id] = desiredResolutionLevel;
-          const sender = videoSenders[id];
-          const params = sender.getParameters();
-          if (!params.encodings) {
-            params.encodings = [{}];
-          }
-          params.encodings[0].maxBitrate = newBitrate;
-          params.encodings[0].maxFramerate = 60;
-          params.encodings[0].networkPriority = "high";
-          params.encodings[0].priority = "high";
-          params.encodings[0].scaleResolutionDownBy = newScaleFactor;
-
-          sender
-            .setParameters(params)
-            .then(() => {
-              console.log(
-                `Peer ${id}: Bitrate actualizado a ${newBitrate} bps y resolución ajustada a ${resolutionLevels[desiredResolutionLevel].name} (scale: ${newScaleFactor}).`
-              );
-            })
-            .catch((err) => {
-              console.error(
-                "Error al actualizar parámetros para peer",
-                id,
-                err
-              );
-            });
-        }
-      }
-    } catch (e) {
-      console.error("Error en getStats para peer", id, e);
-    }
   }
 }, 1000);
 
