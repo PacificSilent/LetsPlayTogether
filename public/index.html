@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Lets Play Together</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Let's Play Together</title>
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,43 +12,240 @@
         theme: {
           extend: {
             colors: {
-              secondary: "#8ECAE6",
-              accent: "#219EBC",
-              dark: "#023047",
-              warning: "#FFB703",
               primary: "#FB8500",
+              accent: "#FB8500", // Usamos naranja para acentos
+              dark: "#023047",
+              secondary: "#8ECAE6",
+              warning: "#FFB703",
+              purple: "#7e22ce",
             },
           },
         },
       };
     </script>
+    <style>
+      /* Desactivar el scroll en toda la página */
+      html,
+      body {
+        overflow: hidden;
+      }
+    </style>
   </head>
-  <body class="bg-dark text-secondary">
-    <div class="flex flex-col items-center min-h-screen pt-16">
-      <!-- Título fuera del card -->
-      <h1 class="text-4xl font-bold text-primary mb-8">Lets Play Together</h1>
-      <!-- Card para el ingreso de nick -->
-      <div class="bg-white shadow-xl rounded-lg p-8 w-full max-w-md mx-auto">
-        <p class="mb-4 text-secondary">Ingresa tu nick para jugar:</p>
-        <input
-          type="text"
-          id="nickname"
-          placeholder="Ingresa tu nombre o nick"
-          class="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        <button
-          id="connectBtn"
-          class="w-full bg-primary text-white rounded-md py-2 hover:bg-accent mb-4"
-        >
-          Conectar
-        </button>
-        <!-- Botón de instalación de PWA, oculto inicialmente -->
-        <button
-          id="installBtn"
-          class="w-full bg-accent text-white rounded-md py-2 hover:bg-blue-700 hidden"
-        >
-          Instalar App
-        </button>
+  <body
+    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 p-4"
+  >
+    <div
+      class="w-full max-w-md border-2 border-purple-500 bg-gray-900 text-white rounded-lg shadow-xl -mt-20"
+    >
+      <!-- Card Header -->
+      <div class="p-6 space-y-1 text-center">
+        <div class="flex justify-center mb-2">
+          <!-- Gamepad SVG Icon -->
+          <?xml version="1.0" encoding="iso-8859-1"?>
+          <!-- Generator: Adobe Illustrator 19.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+          <svg
+            version="1.1"
+            id="Layer_1"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            x="0px"
+            y="0px"
+            viewBox="0 0 512 512"
+            width="64"
+            height="64"
+            style="enable-background: new 0 0 512 512"
+            xml:space="preserve"
+          >
+            <path
+              style="fill: #314e55"
+              d="M404.071,210.46c-0.58-0.116-1.17-0.174-1.786-0.174h-91.429v-27.429
+            c0-5.049-4.089-9.143-9.143-9.143h-18.286v-28.911c0-1.379,0-6.281,0-7.661c0-10.085,8.205-18.286,18.286-18.286
+            c1.703,0,7.44,0,9.143,0h100.571c0.316,0,1.464,0,1.78,0c20.17,0,36.571-16.406,36.571-36.571c0-5.049-4.089-9.143-9.143-9.143
+            s-9.143,4.094-9.143,9.143c0,10.085-8.205,18.286-18.286,18.286c-0.316,0-1.464,0-1.78,0H310.857c-1.703,0-7.44,0-9.143,0
+            c-20.17,0-36.571,16.406-36.571,36.571c0,1.379,0,6.281,0,7.661v28.911h-36.571c-5.053,0-9.143,4.094-9.143,9.143v27.429H109.714
+            c-0.598,0-1.187,0.058-1.759,0.174C47.304,213.764,0,263.625,0,324.572c0,63.018,51.268,114.286,114.286,114.286
+            c31.884,0,62.187-13.277,83.795-36.571H313.92c21.607,23.295,51.911,36.571,83.795,36.571c63.018,0,114.286-51.268,114.286-114.286
+            C512,263.639,464.705,213.781,404.071,210.46z"
+            />
+            <g>
+              <rect
+                x="237.714"
+                y="192"
+                style="fill: #eaeaea"
+                width="54.857"
+                height="18.286"
+              />
+              <path
+                style="fill: #eaeaea"
+                d="M397.714,420.572c-27.982,0-54.509-12.17-72.777-33.393c-1.732-2.018-4.268-3.178-6.928-3.178
+              H193.991c-2.661,0-5.196,1.161-6.928,3.178c-18.268,21.223-44.795,33.393-72.777,33.393c-52.938,0-96-43.067-96-96
+              c0-51.58,40.33-93.71,91.821-95.911c0.312-0.013,0.634-0.045,0.938-0.089h117.527h73.143h99.232
+              c0.312,0.045,0.625,0.076,0.947,0.089c51.491,2.201,91.821,44.33,91.821,95.911C493.714,377.505,450.652,420.572,397.714,420.572z"
+              />
+            </g>
+            <g>
+              <path
+                style="fill: #314e55"
+                d="M155.429,310.857h-36.571v-36.571c0-5.049-4.089-9.143-9.143-9.143
+              c-5.053,0-9.143,4.094-9.143,9.143v36.571H64c-5.053,0-9.143,4.094-9.143,9.143c0,5.049,4.089,9.143,9.143,9.143h36.571v36.571
+              c0,5.049,4.089,9.143,9.143,9.143c5.053,0,9.143-4.094,9.143-9.143v-36.571h36.571c5.053,0,9.143-4.094,9.143-9.143
+              C164.571,314.951,160.482,310.857,155.429,310.857z"
+              />
+              <path
+                style="fill: #314e55"
+                d="M393.143,301.714c15.125,0,27.429-12.304,27.429-27.429s-12.304-27.429-27.429-27.429
+              s-27.429,12.304-27.429,27.429S378.018,301.714,393.143,301.714z"
+              />
+            </g>
+            <circle style="fill: #e65f58" cx="393.143" cy="274.286" r="9.143" />
+            <path
+              style="fill: #314e55"
+              d="M448,292.572c-15.125,0-27.429,12.304-27.429,27.429c0,15.125,12.304,27.429,27.429,27.429
+            c15.125,0,27.429-12.304,27.429-27.429C475.429,304.875,463.125,292.572,448,292.572z"
+            />
+            <circle style="fill: #e65f58" cx="448" cy="320" r="9.143" />
+            <path
+              style="fill: #314e55"
+              d="M338.286,292.572c-15.125,0-27.429,12.304-27.429,27.429c0,15.125,12.304,27.429,27.429,27.429
+            s27.429-12.304,27.429-27.429C365.714,304.875,353.411,292.572,338.286,292.572z"
+            />
+            <circle style="fill: #e65f58" cx="338.286" cy="320" r="9.143" />
+            <path
+              style="fill: #314e55"
+              d="M393.143,338.286c-15.125,0-27.429,12.304-27.429,27.429s12.304,27.429,27.429,27.429
+            s27.429-12.304,27.429-27.429S408.268,338.286,393.143,338.286z"
+            />
+            <circle style="fill: #e65f58" cx="393.143" cy="365.714" r="9.143" />
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+            <g></g>
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-purple-400">Let's Play Together</h2>
+        <p class="text-gray-400">
+          Ingresa tu nickname para conectarte y jugar.
+        </p>
+      </div>
+
+      <!-- Card Content -->
+      <div class="px-6 pb-4">
+        <form id="loginForm">
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <input
+                id="nickname"
+                type="text"
+                placeholder="Ingresa tu nickname"
+                class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              id="connectBtn"
+              class="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md transition-colors"
+              disabled
+            >
+              Conectar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Card Footer -->
+      <div class="flex justify-center border-t border-gray-800 pt-4 pb-6 px-6">
+        <div class="flex space-x-2 items-center">
+          <!-- Small Gamepad SVG Icon -->
+          <svg
+            version="1.1"
+            id="Layer_1"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            x="0px"
+            y="0px"
+            viewBox="0 0 512 512"
+            width="32"
+            height="32"
+            style="enable-background: new 0 0 512 512"
+            xml:space="preserve"
+          >
+            <path
+              style="fill: #314e55"
+              d="M404.071,210.46c-0.58-0.116-1.17-0.174-1.786-0.174h-91.429v-27.429
+            c0-5.049-4.089-9.143-9.143-9.143h-18.286v-28.911c0-1.379,0-6.281,0-7.661c0-10.085,8.205-18.286,18.286-18.286
+            c1.703,0,7.44,0,9.143,0h100.571c0.316,0,1.464,0,1.78,0c20.17,0,36.571-16.406,36.571-36.571c0-5.049-4.089-9.143-9.143-9.143
+            s-9.143,4.094-9.143,9.143c0,10.085-8.205,18.286-18.286,18.286c-0.316,0-1.464,0-1.78,0H310.857c-1.703,0-7.44,0-9.143,0
+            c-20.17,0-36.571,16.406-36.571,36.571c0,1.379,0,6.281,0,7.661v28.911h-36.571c-5.053,0-9.143,4.094-9.143,9.143v27.429H109.714
+            c-0.598,0-1.187,0.058-1.759,0.174C47.304,213.764,0,263.625,0,324.572c0,63.018,51.268,114.286,114.286,114.286
+            c31.884,0,62.187-13.277,83.795-36.571H313.92c21.607,23.295,51.911,36.571,83.795,36.571c63.018,0,114.286-51.268,114.286-114.286
+            C512,263.639,464.705,213.781,404.071,210.46z"
+            />
+            <g>
+              <rect
+                x="237.714"
+                y="192"
+                style="fill: #eaeaea"
+                width="54.857"
+                height="18.286"
+              />
+              <path
+                style="fill: #eaeaea"
+                d="M397.714,420.572c-27.982,0-54.509-12.17-72.777-33.393c-1.732-2.018-4.268-3.178-6.928-3.178
+              H193.991c-2.661,0-5.196,1.161-6.928,3.178c-18.268,21.223-44.795,33.393-72.777,33.393c-52.938,0-96-43.067-96-96
+              c0-51.58,40.33-93.71,91.821-95.911c0.312-0.013,0.634-0.045,0.938-0.089h117.527h73.143h99.232
+              c0.312,0.045,0.625,0.076,0.947,0.089c51.491,2.201,91.821,44.33,91.821,95.911C493.714,377.505,450.652,420.572,397.714,420.572z"
+              />
+            </g>
+            <g>
+              <path
+                style="fill: #314e55"
+                d="M155.429,310.857h-36.571v-36.571c0-5.049-4.089-9.143-9.143-9.143
+              c-5.053,0-9.143,4.094-9.143,9.143v36.571H64c-5.053,0-9.143,4.094-9.143,9.143c0,5.049,4.089,9.143,9.143,9.143h36.571v36.571
+              c0,5.049,4.089,9.143,9.143,9.143c5.053,0,9.143-4.094,9.143-9.143v-36.571h36.571c5.053,0,9.143-4.094,9.143-9.143
+              C164.571,314.951,160.482,310.857,155.429,310.857z"
+              />
+              <path
+                style="fill: #314e55"
+                d="M393.143,301.714c15.125,0,27.429-12.304,27.429-27.429s-12.304-27.429-27.429-27.429
+              s-27.429,12.304-27.429,27.429S378.018,301.714,393.143,301.714z"
+              />
+            </g>
+            <circle style="fill: #e65f58" cx="393.143" cy="274.286" r="9.143" />
+            <path
+              style="fill: #314e55"
+              d="M448,292.572c-15.125,0-27.429,12.304-27.429,27.429c0,15.125,12.304,27.429,27.429,27.429
+            c15.125,0,27.429-12.304,27.429-27.429C475.429,304.875,463.125,292.572,448,292.572z"
+            />
+            <circle style="fill: #e65f58" cx="448" cy="320" r="9.143" />
+            <path
+              style="fill: #314e55"
+              d="M338.286,292.572c-15.125,0-27.429,12.304-27.429,27.429c0,15.125,12.304,27.429,27.429,27.429
+            s27.429-12.304,27.429-27.429C365.714,304.875,353.411,292.572,338.286,292.572z"
+            />
+            <circle style="fill: #e65f58" cx="338.286" cy="320" r="9.143" />
+            <path
+              style="fill: #314e55"
+              d="M393.143,338.286c-15.125,0-27.429,12.304-27.429,27.429s12.304,27.429,27.429,27.429
+            s27.429-12.304,27.429-27.429S408.268,338.286,393.143,338.286z"
+            />
+            <circle style="fill: #e65f58" cx="393.143" cy="365.714" r="9.143" />
+          </svg>
+          <span class="text-sm text-gray-400">
+            Jugar cooperativo local nunca fue tan fácil
+          </span>
+        </div>
       </div>
     </div>
 
@@ -56,11 +254,13 @@
       id="waitingModal"
       class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden"
     >
-      <div class="bg-white rounded-lg p-8 text-center">
-        <h2 class="text-2xl font-bold text-primary mb-4">
+      <div
+        class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center"
+      >
+        <h2 class="text-2xl font-bold text-purple-400 mb-4">
           Esperando confirmación
         </h2>
-        <p class="text-secondary">
+        <p class="text-gray-400">
           Por favor, espera mientras el host aprueba tu conexión...
         </p>
       </div>
@@ -71,12 +271,17 @@
       id="messageModal"
       class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden"
     >
-      <div class="bg-white rounded-lg p-8 text-center">
-        <h2 id="messageTitle" class="text-2xl font-bold text-primary mb-4"></h2>
-        <p id="messageContent" class="text-secondary mb-4"></p>
+      <div
+        class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center"
+      >
+        <h2
+          id="messageTitle"
+          class="text-2xl font-bold text-purple-400 mb-4"
+        ></h2>
+        <p id="messageContent" class="text-gray-400 mb-4"></p>
         <button
           id="messageCloseBtn"
-          class="w-full bg-primary text-white rounded-md py-2 hover:bg-accent"
+          class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 transition-colors"
         >
           OK
         </button>
@@ -85,7 +290,28 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      // Registra el service worker
+      // Validación sencilla para habilitar el botón de Connect
+      const nicknameInput = document.getElementById("nickname");
+      const connectBtn = document.getElementById("connectBtn");
+      const loginForm = document.getElementById("loginForm");
+
+      nicknameInput.addEventListener("input", function () {
+        connectBtn.disabled = !this.value.trim();
+      });
+
+      loginForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const nick = nicknameInput.value.trim();
+        if (!nick) {
+          showMessage("Error", "Por favor, ingresa un nombre.");
+          return;
+        }
+        // Mostrar el modal de espera
+        waitingModal.classList.remove("hidden");
+        socket.emit("peerRequest", { nick });
+      });
+
+      // Service Worker registration
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
@@ -127,66 +353,17 @@
         messageModal.classList.add("hidden");
       });
 
-      // Evento para el botón Conectar
-      document.getElementById("connectBtn").addEventListener("click", () => {
-        const nick = document.getElementById("nickname").value.trim();
-        if (!nick) {
-          showMessage("Error", "Por favor, ingresa un nombre.");
-          return;
+      // Socket event for peer approval
+      socket.on("peerApproval", (data) => {
+        waitingModal.classList.add("hidden");
+        if (data.approved) {
+          // Se establece la cookie aprobada y se redirige a watch.html
+          document.cookie = "approved=1; path=/";
+          window.location.href = "/watch.html";
+        } else {
+          showMessage("Rechazado", "Solicitud rechazada por el host.");
         }
-        // Mostrar el modal de espera
-        waitingModal.classList.remove("hidden");
-        socket.emit("peerRequest", { nick });
-
-        socket.on("peerApproval", (data) => {
-          // Ocultar el modal de espera
-          waitingModal.classList.add("hidden");
-          if (data.approved) {
-            // Se establece la cookie aprobada y se redirige a watch.html
-            document.cookie = "approved=1; path=/";
-            window.location.href = "/watch.html";
-          } else {
-            showMessage("Rechazado", "Solicitud rechazada por el broadcaster.");
-          }
-        });
       });
-
-      // Manejo del evento beforeinstallprompt para mostrar el botón de instalar
-      let deferredPrompt;
-      window.addEventListener("beforeinstallprompt", (e) => {
-        // Previene que el navegador muestre el prompt automáticamente
-        e.preventDefault();
-        deferredPrompt = e;
-        // Mostrar el botón de instalación
-        document.getElementById("installBtn").classList.remove("hidden");
-      });
-
-      // Evento para el botón de instalación
-      document
-        .getElementById("installBtn")
-        .addEventListener("click", async () => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt(); // Muestra el prompt de instalación
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`User response to the install prompt: ${outcome}`);
-            // Ocultar el botón de instalación después de la respuesta
-            document.getElementById("installBtn").classList.add("hidden");
-            deferredPrompt = null;
-          }
-        });
-    </script>
-    <script>
-      function isIOS() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      }
-
-      if (isIOS()) {
-        // Muestra un modal o mensaje con instrucciones para iOS
-        showMessage(
-          "Instalar App",
-          "Para instalar la app, toca el botón de compartir y selecciona 'Añadir a la pantalla de inicio'."
-        );
-      }
     </script>
   </body>
 </html>
