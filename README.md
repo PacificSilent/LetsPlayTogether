@@ -1,58 +1,70 @@
-# WebRTC Video/Audio Broadcast
+# Lets Play Together
 
-WebRTC PeerToPeer broadcast application that allows the broadcaster to send a video and audio stream to all connected users (watchers).
+Este proyecto permite conectar a otras personas a tu PC a través de la web, de forma similar a lo que hace Parsec, pero aprovechando la compatibilidad con todos los navegadores. La aplicación utiliza WebRTC para transmitir video y audio en tiempo real, permitiendo que el usuario (broadcaster) comparta la pantalla o una ventana mientras los clientes (watchers) se conectan bajo petición.
 
-You can find the tutorial that explains the code and functionality on my [website](https://gabrieltanner.org/blog/webrtc-video-broadcast).
+**Nota:** Este proyecto es un fork basado en [WebRTC-Video-Broadcast](https://github.com/TannerGabriel/WebRTC-Video-Broadcast).
 
-## Getting started
+## Características
 
-### Starting the application
+- **Transmisión en tiempo real:** Envia video y audio usando tecnología WebRTC.
+- **Soporte PWA (Progressive Web App):** La aplicación puede ser instalada como una app en dispositivos móviles o de escritorio, ofreciendo una experiencia nativa.
+- **Soporte para joysticks:** Permite interactuar mediante controladores, enviando datos de entrada para simular una experiencia similar a la de videojuegos remotos.
+- **Compatibilidad multi-navegador:** Funciona en los principales navegadores web, eliminando la necesidad de instalar software adicional.
+- **Seguridad y autenticación:** El acceso a ciertas rutas se protege mediante autenticación básica y validación de cookies.
+- **Control dinámico de la transmisión:** Ajusta parámetros de bitrate y resolución en función de las condiciones de red para mejorar la calidad de la transmisión.
+- **Integración de sockets:** Comunicación en tiempo real usando Socket.IO para enviar ofertas y candidatos durante el proceso de conexión Peer-to-Peer.
 
-Start the application using Node:
+## Cómo Empezar
+
+### Iniciando la Aplicación
+
+#### Usando Node.js
 
 ```bash
-# Install dependencies for server
+# Instalar dependencias del servidor
 npm install
 
-# Run the server
+# Iniciar el servidor
 node server
 ```
 
-Start the application using Docker:
+#### Usando Docker
 
 ```bash
-# Building the image
+# Construir la imagen
 docker build --tag webrtcvideobroadcast .
 
-# Run the image in a container
+# Ejecutar el contenedor
 docker run -d -p 4000:4000 webrtcvideobroadcast
 ```
 
-### Testing the application
+### Prueba de la Aplicación
 
-The application should now be running on your localhost:4000 and you test it by connecting to localhost:4000/broadcast.html to add a new broadcaster.
+1. Accede a `localhost:4000/broadcast.html` para iniciar una transmisión (broadcaster). Se solicitará autenticación para proteger el acceso.
+2. Abre `localhost:4000` desde otro dispositivo o ventana para ver la transmisión en vivo como cliente (watcher).
 
-After that, you just need to visit localhost:4000 to connect to the server as a client and you should get the video that is streamed from the broadcaster.
+## Configuración Adicional
 
-## Adding a TURN server
+### Soporte PWA
 
-A TURN server is used to relay traffic if a direct peer-to-peer connection fails and is required for most WebRTC applications since a direct connection is often not possible between two clients that aren't on the same network. This repository doesn't include the usage of a TURN server by default, but you can add one by commenting in the turn configuration in the `broadcast.js` and `watch.js` file and filling in your TURN credentials.
+La aplicación incluye un Service Worker y un archivo de manifiesto para ofrecer una experiencia PWA. Esto permite la instalación de la aplicación en dispositivos móviles y de escritorio, con un rendimiento optimizado y la posibilidad de trabajar fuera de línea en ciertos casos.
 
-There are several options on how you can create your own TURN server. Here are just two common ones:
+### Soporte para Joysticks
 
-- [Coturn](https://github.com/coturn/coturn)
-- [Golang WebRTC pion library TURN examples](https://github.com/pion/turn/tree/master/examples)
+Integrado para mejorar la interacción, el proyecto puede recibir entradas desde joysticks. Esto hace posible conectar controladores (por ejemplo, mediante VigemClient) para enviar datos de ejes y botones, permitiendo usar la PC de forma remota similar a una experiencia gaming.
 
-You can also use TURN servers from cloud providers or other companies. Here is a [tutorial](https://gabrieltanner.org/blog/turn-server) that shows you how to set up Coturn and add a domain to your TURN server.
+### Agregar un Servidor TURN
 
-## Author
+En escenarios donde la conexión directa falla, puedes agregar un servidor TURN. Edita las configuraciones en los archivos `broadcast.js` y `watch.js` para incluir tus credenciales y detalles del servidor TURN.
 
-Gabriel Tanner
+## Documentación Adicional
 
-## Support me
+- **Tutorial:** Se explica el funcionamiento y la implementación en [este tutorial](https://gabrieltanner.org/blog/webrtc-video-broadcast).
+- **Código y Configuración:** El repositorio incluye ejemplos de configuración para ESLint, Docker, y GitHub Actions para CodeQL y gestión de issues.
+- **Licencia:** El proyecto está licenciado bajo la Licencia MIT.
 
-<a href="https://www.buymeacoffee.com/gabrieltanner" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+¡Disfruta conectando, compartiendo y jugando de forma remota a través de la web!
 
-## License
+## Soporte y Contribuciones
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details
+Si encuentras algún problema o tienes ideas para nuevas funciones, por favor revisa los issues en GitHub o envía un pull request. También puedes apoyar el proyecto mediante [Buy Me A Coffee](https://buymeacoffee.com/pacificsilent).

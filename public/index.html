@@ -175,5 +175,18 @@
           }
         });
     </script>
+    <script>
+      function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      }
+
+      if (isIOS()) {
+        // Muestra un modal o mensaje con instrucciones para iOS
+        showMessage(
+          "Instalar App",
+          "Para instalar la app, toca el botón de compartir y selecciona 'Añadir a la pantalla de inicio'."
+        );
+      }
+    </script>
   </body>
 </html>
