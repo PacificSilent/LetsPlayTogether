@@ -75,11 +75,11 @@ socket.on("watcher", (id) => {
     if (!params.encodings) {
       params.encodings = [{}];
     }
-    params.encodings[0].maxBitrate = 6000000; // 6 Mbps
+    params.encodings[0].maxBitrate = 30000000; // 30 Mbps
     params.encodings[0].maxFramerate = 60;
     params.encodings[0].networkPriority = "high";
     params.encodings[0].priority = "high";
-    params.degradationPreference = "balanced";
+    params.degradationPreference = "maintain-framerate";
     videoSender
       .setParameters(params)
       .then(() => {
