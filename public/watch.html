@@ -8,6 +8,13 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
     <script>
       tailwind.config = {
         theme: {
@@ -61,13 +68,50 @@
     <!-- Panel de opciones -->
     <div
       id="options-panel"
-      class="fixed top-2 right-2 bg-gray-900 bg-opacity-75 text-white p-4 rounded space-y-2 hidden"
+      class="fixed top-2 right-2 bg-gray-900 bg-opacity-60 text-white p-3 rounded space-y-2 hidden"
     >
-      <button id="unmute-video" class="bg-accent px-4 py-2 rounded">
-        Desmutear
+      <!-- Botón para Desmutear/Mutar -->
+      <button
+        id="unmute-video"
+        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+      >
+        <i class="fa-solid fa-volume-high"></i>
+        <span>Desmutear</span>
       </button>
-      <!-- Aquí se pueden insertar otros botones -->
+      <!-- Botón para Pantalla Completa (solo en desktop) -->
+      <button
+        id="toggle-fullscreen"
+        class="w-full desktop-only bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+      >
+        <i class="fa-solid fa-expand"></i>
+        <span>Pantalla Completa</span>
+      </button>
+      <!-- Botón para Estadísticas -->
+      <button
+        id="toggle-stats"
+        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+      >
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Estadísticas</span>
+      </button>
+      <!-- Botón para Salir del Streaming (rojo con letras blancas) -->
+      <button
+        id="exit-streaming"
+        class="w-full bg-red-600 px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-red-700 transition"
+      >
+        <i class="fa-solid fa-door-open"></i>
+        <span>Salir del Streaming</span>
+      </button>
     </div>
+
+    <!-- Media query para ocultar el botón de pantalla completa en dispositivos móviles -->
+    <style>
+      @media (max-width: 768px) {
+        .desktop-only {
+          display: none;
+        }
+      }
+    </style>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/watch.js"></script>

@@ -86,6 +86,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const optionsPanel = document.getElementById("options-panel");
   const videoElem = document.getElementById("video");
   const unmuteBtn = document.getElementById("unmute-video");
+  const toggleStatsButton = document.getElementById("toggle-stats");
+
+  // Creamos (o recuperamos) el contenedor global de estadísticas
+  let statsOverlay = document.getElementById("client-stats");
+  if (!statsOverlay) {
+    statsOverlay = document.createElement("div");
+    statsOverlay.id = "client-stats";
+    statsOverlay.style.position = "fixed";
+    statsOverlay.style.top = "50px";
+    statsOverlay.style.left = "10px";
+    statsOverlay.style.background = "rgba(0, 0, 0, 0.7)";
+    statsOverlay.style.color = "#fff";
+    statsOverlay.style.padding = "10px";
+    statsOverlay.style.borderRadius = "5px";
+    statsOverlay.style.zIndex = "50";
+    statsOverlay.style.fontSize = "12px";
+    statsOverlay.style.display = "none";
+    document.body.appendChild(statsOverlay);
+  }
 
   // Toggle del panel de opciones al hacer click en la pantalla
   document.addEventListener("click", (e) => {
@@ -95,45 +114,31 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Toggle de mute/desmute
-  unmuteBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    videoElem.muted = !videoElem.muted;
-    unmuteBtn.textContent = videoElem.muted ? "Desmutear" : "Mutear";
-  });
+  if (unmuteBtn) {
+    unmuteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      videoElem.muted = !videoElem.muted;
+      const spanText = unmuteBtn.querySelector("span");
+      // Solo actualizamos el texto del span para no afectar el icono
+      if (spanText) {
+        spanText.textContent = videoElem.muted ? "Desmutear" : "Mutear";
+      }
+    });
+  }
 
-  // --- Estadísticas del Cliente ---
-  // Crear e insertar el botón de toggle de estadísticas en el panel de opciones
-  const toggleStatsButton = document.createElement("button");
-  toggleStatsButton.id = "toggle-stats";
-  toggleStatsButton.textContent = "Mostrar Estadísticas";
-  toggleStatsButton.className = "bg-accent px-4 py-2 rounded";
-  optionsPanel.appendChild(toggleStatsButton);
-
-  // Crear contenedor flotante para estadísticas (ubicado en esquina superior izquierda)
-  const statsOverlay = document.createElement("div");
-  statsOverlay.id = "client-stats";
-  statsOverlay.style.position = "fixed";
-  statsOverlay.style.top = "50px";
-  statsOverlay.style.left = "10px";
-  statsOverlay.style.background = "rgba(0, 0, 0, 0.7)";
-  statsOverlay.style.color = "#fff";
-  statsOverlay.style.padding = "10px";
-  statsOverlay.style.borderRadius = "5px";
-  statsOverlay.style.zIndex = "50";
-  statsOverlay.style.fontSize = "12px";
-  statsOverlay.style.display = "none";
-  document.body.appendChild(statsOverlay);
-
-  // Toggle la visibilidad de la superposición de estadísticas
-  toggleStatsButton.addEventListener("click", () => {
-    if (statsOverlay.style.display === "none") {
-      statsOverlay.style.display = "block";
-      toggleStatsButton.textContent = "Ocultar Estadísticas";
-    } else {
-      statsOverlay.style.display = "none";
-      toggleStatsButton.textContent = "Mostrar Estadísticas";
-    }
-  });
+  // Toggle de estadísticas (usando el botón definido en el HTML)
+  if (toggleStatsButton) {
+    toggleStatsButton.addEventListener("click", () => {
+      const spanText = toggleStatsButton.querySelector("span");
+      if (statsOverlay.style.display === "none") {
+        statsOverlay.style.display = "block";
+        if (spanText) spanText.textContent = "Ocultar Estadísticas";
+      } else {
+        statsOverlay.style.display = "none";
+        if (spanText) spanText.textContent = "Estadísticas";
+      }
+    });
+  }
 
   // Variables para cálculo del bitrate y acumulación de bytes
   let prevBytes = 0;
@@ -285,4 +290,42 @@ document.addEventListener("DOMContentLoaded", () => {
     requestAnimationFrame(pollGamepads);
   }
   pollGamepads();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const fullscreenBtn = document.getElementById("toggle-fullscreen");
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.error(`Error al activar pantalla completa: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const exitBtn = document.getElementById("exit-streaming");
+  if (exitBtn) {
+    exitBtn.addEventListener("click", async () => {
+      // Eliminar la cookie (ajusta el nombre si es necesario)
+      document.cookie =
+        "streamingEntry=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+      // Salir de pantalla completa si está activa
+      if (document.fullscreenElement) {
+        try {
+          await document.exitFullscreen();
+        } catch (err) {
+          console.error(`Error al salir de pantalla completa: ${err.message}`);
+        }
+      }
+
+      // Volver atrás en el historial (o redirigir a otra página)
+      window.history.back();
+    });
+  }
 });
