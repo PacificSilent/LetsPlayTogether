@@ -28,6 +28,13 @@
       class="p-4 bg-gray-800 text-white flex justify-between items-center"
     >
       <h1 class="text-3xl font-bold">Broadcast - Let's Play Together</h1>
+      <!-- Botón para el chat de voz en broadcast -->
+      <button
+        id="voiceToggleBtn"
+        class="bg-accent px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Unirse al Chat de Voz
+      </button>
     </header>
 
     <!-- Área principal -->
@@ -59,10 +66,16 @@
           </button>
         </div>
         <div class="flex flex-col items-center">
-          <!-- Sección de estadísticas debajo del video, centradas -->
-          <div id="stats" class="text-sm mt-4 text-center">
-            <!-- Se actualizará desde broadcast.js -->
-          </div>
+          <!-- Sección de estadísticas debajo del video -->
+          <div id="stats" class="text-sm mt-4 text-center"></div>
+        </div>
+
+        <!-- Panel de chat de voz: muestra la lista de usuarios conectados -->
+        <div
+          class="mt-6 p-4 bg-gray-800 rounded-lg text-white max-w-md mx-auto"
+        >
+          <h2 class="text-xl font-bold mb-2">Usuarios en Chat de Voz</h2>
+          <ul id="voiceUserList" class="space-y-1"></ul>
         </div>
       </main>
 
@@ -82,7 +95,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <!-- <script src="/forceH264.js"></script> -->
     <script src="/broadcast.js"></script>
+    <script src="/voiceChat.js"></script>
   </body>
 </html>

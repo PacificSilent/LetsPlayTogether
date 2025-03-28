@@ -102,6 +102,21 @@
         <i class="fa-solid fa-door-open"></i>
         <span>Salir del Streaming</span>
       </button>
+      <!-- Botón para Chat de Voz -->
+      <button
+        id="voiceToggleBtn"
+        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+      >
+        Unirse al Chat de Voz
+      </button>
+    </div>
+
+    <!-- Panel de chat de voz: lista de usuarios conectados -->
+    <div
+      class="fixed bottom-2 left-2 bg-gray-800 bg-opacity-70 p-4 rounded-lg text-white max-w-xs"
+    >
+      <h2 class="text-lg font-bold mb-2">Chat de Voz</h2>
+      <ul id="voiceUserList" class="space-y-1"></ul>
     </div>
 
     <!-- Media query para ocultar el botón de pantalla completa en dispositivos móviles -->
@@ -115,5 +130,6 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/watch.js"></script>
+    <script src="/voiceChat.js"></script>
   </body>
 </html>
