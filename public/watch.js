@@ -109,7 +109,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // Toggle del panel de opciones al hacer click en la pantalla
   document.addEventListener("click", (e) => {
     if (!optionsPanel.contains(e.target)) {
-      optionsPanel.classList.toggle("hidden");
+      const gamepadContainer = document.getElementById(
+        "virtual-gamepad-container"
+      );
+      // Solo quita el hidden si el gamepad está oculto
+      const isGamepadHidden =
+        !gamepadContainer ||
+        gamepadContainer.style.display === "none" ||
+        gamepadContainer.style.display === "";
+      if (isGamepadHidden) {
+        optionsPanel.classList.toggle("hidden");
+      }
     }
   });
 
@@ -327,5 +337,20 @@ document.addEventListener("DOMContentLoaded", () => {
       // Volver atrás en el historial (o redirigir a otra página)
       window.history.back();
     });
+  }
+});
+
+document.getElementById("show-gamepad").addEventListener("click", () => {
+  const gamepadContainer = document.getElementById("virtual-gamepad-container");
+  // Verifica si el gamepad está oculto (display === "none" o sin asignar)
+  if (
+    gamepadContainer &&
+    (gamepadContainer.style.display === "none" ||
+      gamepadContainer.style.display === "")
+  ) {
+    gamepadContainer.style.display = "block";
+    gamepadContainer.style.pointerEvents = "auto";
+    // Ocultar el panel de opciones
+    document.getElementById("options-panel").classList.add("hidden");
   }
 });

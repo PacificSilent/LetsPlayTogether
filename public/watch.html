@@ -15,6 +15,16 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+    <style>
+      /* Desactivar selección globalmente */
+      body,
+      html {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+    </style>
     <script>
       tailwind.config = {
         theme: {
@@ -68,7 +78,7 @@
     <!-- Panel de opciones -->
     <div
       id="options-panel"
-      class="fixed top-2 right-2 bg-gray-900 bg-opacity-60 text-white p-3 rounded space-y-2 hidden"
+      class="fixed top-2 right-2 bg-gray-900 bg-opacity-60 text-white p-3 rounded space-y-2"
     >
       <!-- Botón para Desmutear/Mutar -->
       <button
@@ -102,6 +112,14 @@
         <i class="fa-solid fa-door-open"></i>
         <span>Salir del Streaming</span>
       </button>
+      <!-- Botón para Mostrar Gamepad -->
+      <button
+        id="show-gamepad"
+        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+      >
+        <i class="fa-solid fa-gamepad"></i>
+        <span>Mostrar Gamepad</span>
+      </button>
     </div>
 
     <!-- Media query para ocultar el botón de pantalla completa en dispositivos móviles -->
@@ -115,5 +133,6 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/watch.js"></script>
+    <script src="/virtualGamepad.js"></script>
   </body>
 </html>
