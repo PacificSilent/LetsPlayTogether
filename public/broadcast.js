@@ -75,7 +75,7 @@ socket.on("watcher", (id) => {
     if (!params.encodings) {
       params.encodings = [{}];
     }
-    params.encodings[0].maxBitrate = 80000000; // 30 Mbps
+    params.encodings[0].maxBitrate = 150000000; // 150 Mbps
     params.encodings[0].maxFramerate = 60;
     params.encodings[0].networkPriority = "high";
     params.encodings[0].priority = "high";
