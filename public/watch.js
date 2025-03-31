@@ -243,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Pérdida de Paquetes:</strong> ${packetsLost}</p>
         <p><strong>Jitter:</strong> ${jitter}</p>
         <p><strong>Resolución:</strong> ${width} x ${height}</p>
-        <p><strong>RTT:</strong> ${rtt} ms</p>
+        <p><strong>Latency (RTT):</strong> ${rtt} ms</p>
         <p><strong>Bytes Recibidos:</strong> ${(
           totalInboundBytes /
           (1024 * 1024)
