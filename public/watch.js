@@ -58,7 +58,12 @@ socket.on("admin-ping", (data) => {
 
 socket.on("disconnectPeer", (peerId) => {
   modal.style.display = "flex";
-  modal.textContent = "Has sido desconectado de la sesión";
+  modal.innerHTML = `
+    <div class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center">
+      <h2 class="text-2xl font-bold text-purple-400 mb-4">Desconexión</h2>
+      <p>Has sido desconectado de la sesión</p>
+    </div>
+  `;
   clearApprovalAndClose();
 });
 

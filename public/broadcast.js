@@ -210,6 +210,8 @@ function getScreen() {
 function gotStream(stream) {
   window.stream = stream;
   videoElement.srcObject = stream;
+  // Agregar manejadores de error a los tracks
+  attachTrackErrorHandlers(stream);
   startTime = Date.now(); // Marcar inicio del streaming
   socket.emit("broadcaster");
   return stream;
@@ -217,6 +219,60 @@ function gotStream(stream) {
 
 function handleError(error) {
   console.error("Error: ", error);
+}
+
+// Función para adjuntar manejadores de error a cada video track
+function attachTrackErrorHandlers(stream) {
+  stream.getVideoTracks().forEach((track) => {
+    track.onended = () => {
+      console.error("El track de video finalizó. Reiniciando transmisión...");
+      fallbackBroadcast();
+    };
+    track.onerror = (err) => {
+      console.error("Error en el track de video:", err);
+      fallbackBroadcast();
+    };
+  });
+}
+
+// Función de fallback que intenta obtener una transmisión de menor calidad
+function fallbackBroadcast() {
+  if (window.stream) {
+    window.stream.getTracks().forEach((track) => track.stop());
+  }
+  // Puedes notificar al usuario que se está intentando un fallback.
+  console.log("Intentando transmisión de baja calidad como fallback...");
+  navigator.mediaDevices
+    .getDisplayMedia({
+      video: {
+        frameRate: { ideal: 60, max: 60 },
+        width: { ideal: 1280, max: 1280 },
+        height: { ideal: 720, max: 720 },
+      },
+      audio: {
+        noiseSuppression: false,
+        autoGainControl: false,
+        echoCancellation: false,
+      },
+    })
+    .then((fallbackStream) => {
+      window.stream = fallbackStream;
+      videoElement.srcObject = fallbackStream;
+      // Actualizar la pista en cada conexión existente
+      const newVideoTrack = fallbackStream.getVideoTracks()[0];
+      Object.keys(peerConnections).forEach((id) => {
+        const sender = videoSenders[id];
+        if (sender) {
+          sender.replaceTrack(newVideoTrack);
+        }
+      });
+      // Agregar los manejadores de error al nuevo stream
+      attachTrackErrorHandlers(fallbackStream);
+      console.log("Fallback de baja calidad iniciado.");
+    })
+    .catch((err) => {
+      console.error("Error al iniciar el fallback:", err);
+    });
 }
 
 // Estadísticas Globales (globalStats)
