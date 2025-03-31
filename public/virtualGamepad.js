@@ -17,9 +17,9 @@
   function sendState() {
     const axes = [
       gamepadState.leftStick.x, // leftStick X
-      -gamepadState.leftStick.y, // leftStick Y (invertido)
+      gamepadState.leftStick.y, // leftStick Y
       gamepadState.rightStick.x, // rightStick X
-      -gamepadState.rightStick.y, // rightStick Y (invertido)
+      gamepadState.rightStick.y, // rightStick Y
     ];
 
     const buttons = new Array(17).fill(0);
@@ -65,11 +65,22 @@
 
   // Botón para ocultar el gamepad dentro de su contenedor
   const hideGamepadBtn = document.createElement("button");
-  hideGamepadBtn.textContent = "Ocultar Gamepad";
+  hideGamepadBtn.id = "show-gamepad";
+  hideGamepadBtn.className =
+    "bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition";
   hideGamepadBtn.style.position = "absolute";
   hideGamepadBtn.style.top = "10px";
   hideGamepadBtn.style.right = "10px";
   hideGamepadBtn.style.zIndex = "1100";
+
+  const icon = document.createElement("i");
+  icon.className = "fa-solid fa-gamepad";
+
+  const span = document.createElement("span");
+  span.textContent = "Ocultar Gamepad";
+
+  hideGamepadBtn.appendChild(icon);
+  hideGamepadBtn.appendChild(span);
 
   // Estilos basados en los botones de watch.html
   hideGamepadBtn.style.backgroundColor = "#219EBC"; // bg-accent

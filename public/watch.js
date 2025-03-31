@@ -64,6 +64,13 @@ socket.on("disconnectPeer", (peerId) => {
 
 function clearApprovalAndClose() {
   document.cookie = "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+
+  // Ocultar el gamepad virtual si existe
+  const gamepadContainer = document.getElementById("virtual-gamepad-container");
+  if (gamepadContainer) {
+    gamepadContainer.style.display = "none";
+  }
+
   if (socket && socket.connected) {
     socket.close();
   }
@@ -112,12 +119,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const gamepadContainer = document.getElementById(
         "virtual-gamepad-container"
       );
-      // Solo quita el hidden si el gamepad está oculto
       const isGamepadHidden =
         !gamepadContainer ||
         gamepadContainer.style.display === "none" ||
         gamepadContainer.style.display === "";
-      if (isGamepadHidden) {
+      // Solo quita el hidden si el gamepad está oculto Y la transmisión ya ha comenzado (video.srcObject existe)
+      if (isGamepadHidden && video.srcObject) {
         optionsPanel.classList.toggle("hidden");
       }
     }
