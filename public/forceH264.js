@@ -53,7 +53,6 @@ function forceH264inSDP(sdp) {
   return newSdpLines.join("\r\n");
 }
 
-// Intercepta setLocalDescription para forzar H264 sin afectar el resto del SDP.
 (function () {
   const originalSetLocalDescription =
     RTCPeerConnection.prototype.setLocalDescription;

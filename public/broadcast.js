@@ -1,9 +1,8 @@
 const videoSenders = {};
 const peerConnections = {};
-const joystickDataByPeer = {}; // Información de joysticks por peer
-const peerLatencies = {}; // Latencias de cada peer
+const joystickDataByPeer = {};
+const peerLatencies = {};
 
-// Obtener el elemento de video desde el DOM
 const videoElement = document.querySelector("video");
 const toggleBtn = document.getElementById("toggleBroadcast");
 const changeBtn = document.getElementById("changeSource");
@@ -22,10 +21,8 @@ const config = {
 
 const socket = io();
 
-// Identificarse como broadcaster para recibir solicitudes
 socket.emit("broadcasterJoin");
 
-// Escuchar las solicitudes de conexión entrantes
 socket.on("newPeerRequest", (data) => {
   const peerList = document.getElementById("peerList");
   const li = document.createElement("li");
@@ -48,12 +45,10 @@ socket.on("newPeerRequest", (data) => {
 
 window.handlePeer = function (peerId, approved) {
   socket.emit("handlePeerRequest", { peerId, approved });
-  // Eliminar la solicitud procesada de la lista
   const li = document.getElementById(peerId);
   if (li) li.remove();
 };
 
-// Manejo de mensajes de socket
 socket.on("answer", (id, description) => {
   peerConnections[id].setRemoteDescription(description);
 });
@@ -65,7 +60,6 @@ socket.on("watcher", (id) => {
   let stream = videoElement.srcObject;
   stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
 
-  // Configuración de parámetros de codificación para la pista de video
   const videoSender = peerConnection
     .getSenders()
     .find((sender) => sender.track && sender.track.kind === "video");
@@ -75,7 +69,7 @@ socket.on("watcher", (id) => {
     if (!params.encodings) {
       params.encodings = [{}];
     }
-    params.encodings[0].maxBitrate = 50000000; // 50 Mbps
+    params.encodings[0].maxBitrate = 50000000;
     params.encodings[0].maxFramerate = 60;
     params.encodings[0].networkPriority = "high";
     params.encodings[0].priority = "high";
@@ -119,12 +113,9 @@ socket.on("disconnectPeer", (id) => {
 socket.on("joystick-data", (data) => {
   const parts = data.id.split("-");
   const peerId = parts[0];
-  // Almacena la información del joystick para este peer.
-  // Esto indicará que el peer tiene al menos un joystick conectado.
   joystickDataByPeer[peerId] = data;
 });
 
-// Administración de peers: ping/pong y desconexión
 socket.on("admin-pong", (data) => {
   const latency = Date.now() - data.pingStart;
   peerLatencies[data.peerId] = latency;
@@ -168,9 +159,7 @@ setInterval(() => {
   updatePeerList();
 }, 5000);
 
-// Manejo del streaming y obtención de dispositivos
 window.onunload = window.onbeforeunload = () => {
-  // Al cerrar la ventana, si hay transmisión activa se cierra la misma
   if (broadcastStream) {
     stopBroadcast();
   }
@@ -210,9 +199,8 @@ function getScreen() {
 function gotStream(stream) {
   window.stream = stream;
   videoElement.srcObject = stream;
-  // Agregar manejadores de error a los tracks
   attachTrackErrorHandlers(stream);
-  startTime = Date.now(); // Marcar inicio del streaming
+  startTime = Date.now();
   socket.emit("broadcaster");
   return stream;
 }
@@ -221,7 +209,6 @@ function handleError(error) {
   console.error("Error: ", error);
 }
 
-// Función para adjuntar manejadores de error a cada video track
 function attachTrackErrorHandlers(stream) {
   stream.getVideoTracks().forEach((track) => {
     track.onended = () => {
@@ -235,12 +222,10 @@ function attachTrackErrorHandlers(stream) {
   });
 }
 
-// Función de fallback que intenta obtener una transmisión de menor calidad
 function fallbackBroadcast() {
   if (window.stream) {
     window.stream.getTracks().forEach((track) => track.stop());
   }
-  // Puedes notificar al usuario que se está intentando un fallback.
   console.log("Intentando transmisión de baja calidad como fallback...");
   navigator.mediaDevices
     .getDisplayMedia({
@@ -258,7 +243,6 @@ function fallbackBroadcast() {
     .then((fallbackStream) => {
       window.stream = fallbackStream;
       videoElement.srcObject = fallbackStream;
-      // Actualizar la pista en cada conexión existente
       const newVideoTrack = fallbackStream.getVideoTracks()[0];
       Object.keys(peerConnections).forEach((id) => {
         const sender = videoSenders[id];
@@ -266,7 +250,6 @@ function fallbackBroadcast() {
           sender.replaceTrack(newVideoTrack);
         }
       });
-      // Agregar los manejadores de error al nuevo stream
       attachTrackErrorHandlers(fallbackStream);
       console.log("Fallback de baja calidad iniciado.");
     })
@@ -275,7 +258,6 @@ function fallbackBroadcast() {
     });
 }
 
-// Estadísticas Globales (globalStats)
 const globalStats = {
   connectedPeers: 0,
   candidatePairBytes: 0,
@@ -291,7 +273,6 @@ const globalStats = {
 };
 
 setInterval(async () => {
-  // Acumulación de métricas globales
   globalStats.connectedPeers = Object.keys(peerConnections).length;
 
   let candidatePairBytes = 0;
@@ -351,7 +332,6 @@ setInterval(async () => {
   globalStats.avgRtt =
     rttCount > 0 ? (totalRoundTripTime / rttCount).toFixed(2) + " sec" : "N/A";
 
-  // Tiempo de streaming
   const elapsedMs = startTime ? Date.now() - startTime : 0;
   const seconds = Math.floor((elapsedMs / 1000) % 60);
   const minutes = Math.floor((elapsedMs / (1000 * 60)) % 60);
@@ -404,8 +384,6 @@ setInterval(async () => {
   }
 }, 1000);
 
-// Manejo de transmisión
-
 let broadcastStream = null;
 
 async function startBroadcast() {
@@ -413,7 +391,6 @@ async function startBroadcast() {
     await getStream();
     broadcastStream = window.stream;
 
-    // Reemplazar la pista de video en cada conexión existente
     const newVideoTrack = broadcastStream.getVideoTracks()[0];
     Object.keys(peerConnections).forEach((id) => {
       const sender = videoSenders[id];
@@ -439,12 +416,10 @@ function stopBroadcast() {
     broadcastStream = null;
     videoElement.srcObject = null;
 
-    // Ocultar el video y el botón de cambiar origen
     videoElement.classList.add("hidden");
     changeBtn.classList.add("hidden");
     toggleBtn.textContent = "Iniciar Transmisión";
 
-    // Cerrar todas las conexiones peer y notificar al servidor para desconectar joysticks
     Object.keys(peerConnections).forEach((peerId) => {
       if (peerConnections[peerId]) {
         peerConnections[peerId].close();
@@ -452,7 +427,6 @@ function stopBroadcast() {
         delete peerConnections[peerId];
       }
     });
-    // Reiniciar el tiempo de streaming
     startTime = null;
   }
 }

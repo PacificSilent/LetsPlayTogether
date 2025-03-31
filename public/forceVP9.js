@@ -53,7 +53,6 @@ function forceVP9inSDP(sdp) {
   return newSdpLines.join("\r\n");
 }
 
-// Intercepta setLocalDescription para forzar VP9 sin afectar el resto del SDP.
 (function () {
   const originalSetLocalDescription =
     RTCPeerConnection.prototype.setLocalDescription;

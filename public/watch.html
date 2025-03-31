@@ -16,7 +16,6 @@
       referrerpolicy="no-referrer"
     />
     <style>
-      /* Desactivar selección globalmente */
       body,
       html {
         user-select: none;
@@ -41,7 +40,6 @@
       };
     </script>
     <script>
-      // This script sets a CSS variable for dynamic mobile viewport height
       const setVhProperty = () => {
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty("--vh", `${vh}px`);

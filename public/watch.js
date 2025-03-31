@@ -50,7 +50,6 @@ socket.on("broadcaster", () => {
 });
 
 socket.on("admin-ping", (data) => {
-  // Responder solo si el target coincide con nuestro socket.id
   if (data.target === socket.id) {
     socket.emit("admin-pong", { peerId: socket.id, pingStart: data.pingStart });
   }
@@ -70,7 +69,6 @@ socket.on("disconnectPeer", (peerId) => {
 function clearApprovalAndClose() {
   document.cookie = "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
 
-  // Ocultar el gamepad virtual si existe
   const gamepadContainer = document.getElementById("virtual-gamepad-container");
   if (gamepadContainer) {
     gamepadContainer.style.display = "none";
@@ -94,13 +92,11 @@ window.addEventListener("unload", clearApprovalAndClose);
 window.addEventListener("pagehide", clearApprovalAndClose);
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Panel de opciones y control del video
   const optionsPanel = document.getElementById("options-panel");
   const videoElem = document.getElementById("video");
   const unmuteBtn = document.getElementById("unmute-video");
   const toggleStatsButton = document.getElementById("toggle-stats");
 
-  // Creamos (o recuperamos) el contenedor global de estadísticas
   let statsOverlay = document.getElementById("client-stats");
   if (!statsOverlay) {
     statsOverlay = document.createElement("div");
@@ -118,7 +114,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(statsOverlay);
   }
 
-  // Toggle del panel de opciones al hacer click en la pantalla
   document.addEventListener("click", (e) => {
     if (!optionsPanel.contains(e.target)) {
       const gamepadContainer = document.getElementById(
@@ -128,27 +123,23 @@ document.addEventListener("DOMContentLoaded", () => {
         !gamepadContainer ||
         gamepadContainer.style.display === "none" ||
         gamepadContainer.style.display === "";
-      // Solo quita el hidden si el gamepad está oculto Y la transmisión ya ha comenzado (video.srcObject existe)
       if (isGamepadHidden && video.srcObject) {
         optionsPanel.classList.toggle("hidden");
       }
     }
   });
 
-  // Toggle de mute/desmute
   if (unmuteBtn) {
     unmuteBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       videoElem.muted = !videoElem.muted;
       const spanText = unmuteBtn.querySelector("span");
-      // Solo actualizamos el texto del span para no afectar el icono
       if (spanText) {
         spanText.textContent = videoElem.muted ? "Desmutear" : "Mutear";
       }
     });
   }
 
-  // Toggle de estadísticas (usando el botón definido en el HTML)
   if (toggleStatsButton) {
     toggleStatsButton.addEventListener("click", () => {
       const spanText = toggleStatsButton.querySelector("span");
@@ -162,7 +153,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Variables para cálculo del bitrate y acumulación de bytes
   let prevBytes = 0;
   let prevTime = Date.now();
   const joinStats = { bytesReceived: 0, start: Date.now() };
@@ -178,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function updateClientStats() {
     if (!peerConnection) return;
-    // Inicia la medición del tiempo de 'decode'
     let decodeStart = performance.now();
     try {
       const statsReport = await peerConnection.getStats();
@@ -257,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Streaming:</strong> ${formatTime(elapsedStreamSec)}</p>
       `;
 
-      // Calcula el tiempo de decode y lo agrega a la interfaz
       const decodeTime = performance.now() - decodeStart;
       statsOverlay.innerHTML += `<p><strong>Decode Time:</strong> ${decodeTime.toFixed(
         2
@@ -269,12 +257,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setInterval(updateClientStats, 1000);
 
-  // Opcional: envío de datos de gamepad (si se utiliza)
   const maxJoysticks = 4;
   const joystickMapping = {};
   const prevValues = {};
   function pollGamepads() {
-    // Sólo enviar datos de joystick si el streaming está activo
     if (!video.srcObject || !peerConnection) {
       requestAnimationFrame(pollGamepads);
       return;
@@ -333,11 +319,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const exitBtn = document.getElementById("exit-streaming");
   if (exitBtn) {
     exitBtn.addEventListener("click", async () => {
-      // Eliminar la cookie (ajusta el nombre si es necesario)
       document.cookie =
         "streamingEntry=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
-      // Salir de pantalla completa si está activa
       if (document.fullscreenElement) {
         try {
           await document.exitFullscreen();
@@ -345,8 +329,6 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error(`Error al salir de pantalla completa: ${err.message}`);
         }
       }
-
-      // Volver atrás en el historial (o redirigir a otra página)
       window.history.back();
     });
   }
@@ -354,7 +336,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.getElementById("show-gamepad").addEventListener("click", () => {
   const gamepadContainer = document.getElementById("virtual-gamepad-container");
-  // Verifica si el gamepad está oculto (display === "none" o sin asignar)
   if (
     gamepadContainer &&
     (gamepadContainer.style.display === "none" ||
@@ -362,7 +343,6 @@ document.getElementById("show-gamepad").addEventListener("click", () => {
   ) {
     gamepadContainer.style.display = "block";
     gamepadContainer.style.pointerEvents = "auto";
-    // Ocultar el panel de opciones
     document.getElementById("options-panel").classList.add("hidden");
   }
 });

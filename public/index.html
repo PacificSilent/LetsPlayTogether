@@ -23,7 +23,6 @@
       };
     </script>
     <style>
-      /* Desactivar el scroll en toda la página */
       html,
       body {
         overflow: hidden;
@@ -297,7 +296,6 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      // Validación sencilla para habilitar el botón de Connect
       const nicknameInput = document.getElementById("nickname");
       const connectBtn = document.getElementById("connectBtn");
       const loginForm = document.getElementById("loginForm");
@@ -313,12 +311,10 @@
           showMessage("Error", "Por favor, ingresa un nombre.");
           return;
         }
-        // Mostrar el modal de espera
         waitingModal.classList.remove("hidden");
         socket.emit("peerRequest", { nick });
       });
 
-      // Service Worker registration
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
@@ -335,7 +331,6 @@
         });
       }
 
-      // Limpiar la cookie de aprobación al cargar la página
       window.addEventListener("load", () => {
         document.cookie =
           "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
@@ -348,23 +343,19 @@
       const messageContent = document.getElementById("messageContent");
       const messageCloseBtn = document.getElementById("messageCloseBtn");
 
-      // Función para mostrar un mensaje en un modal
       function showMessage(title, message) {
         messageTitle.textContent = title;
         messageContent.textContent = message;
         messageModal.classList.remove("hidden");
       }
 
-      // Cerrar modal de mensaje al presionar OK
       messageCloseBtn.addEventListener("click", () => {
         messageModal.classList.add("hidden");
       });
 
-      // Socket event for peer approval
       socket.on("peerApproval", (data) => {
         waitingModal.classList.add("hidden");
         if (data.approved) {
-          // Se establece la cookie aprobada y se redirige a watch.html
           document.cookie = "approved=1; path=/";
           window.location.href = "/watch.html";
         } else {

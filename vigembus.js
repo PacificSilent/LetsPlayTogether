@@ -6,9 +6,7 @@ client.connect();
 const controllers = {};
 
 function sendToVigembus(data) {
-  // Verificar que data.axes exista y sea un array
   if (!data.axes || !Array.isArray(data.axes)) {
-    console.error("Datos de joystick inválidos:", data);
     return;
   }
 
@@ -29,7 +27,7 @@ function sendToVigembus(data) {
   }
   const controller = controllers[deviceKey];
   let changed = false;
-  const epsilon = 0.1; // o el valor que necesites
+  const epsilon = 0.1;
 
   if (Math.abs(controller.axis.leftX.value - data.axes[0]) > epsilon) {
     controller.axis.leftX.setValue(data.axes[0]);
