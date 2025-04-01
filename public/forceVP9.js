@@ -1,4 +1,4 @@
-function forceH264inSDP(sdp) {
+function forceVP9inSDP(sdp) {
   const sdpLines = sdp.split("\r\n");
   const mVideoIndex = sdpLines.findIndex((line) => line.startsWith("m=video"));
   if (mVideoIndex === -1) return sdp;
@@ -9,25 +9,25 @@ function forceH264inSDP(sdp) {
   if (nextMLineIndex === -1) nextMLineIndex = sdpLines.length;
 
   let videoBlock = sdpLines.slice(mVideoIndex, nextMLineIndex);
-  const h264Payloads = new Set();
+  const vp9Payloads = new Set();
   videoBlock.forEach((line) => {
-    if (line.startsWith("a=rtpmap:") && line.toLowerCase().includes("h264")) {
+    if (line.startsWith("a=rtpmap:") && line.toLowerCase().includes("vp9")) {
       const match = line.match(/^a=rtpmap:(\d+)\s/);
       if (match && match[1]) {
-        h264Payloads.add(match[1]);
+        vp9Payloads.add(match[1]);
       }
     }
   });
-  if (h264Payloads.size === 0) {
-    console.warn("No se detectaron payloads H264 en video. SDP inalterado.");
+  if (vp9Payloads.size === 0) {
+    console.warn("No se detectaron payloads VP9 en video. SDP inalterado.");
     return sdp;
   }
   const mLineParts = videoBlock[0].split(" ");
   const mHeader = mLineParts.slice(0, 3);
-  const mPayloads = mLineParts.slice(3).filter((pt) => h264Payloads.has(pt));
+  const mPayloads = mLineParts.slice(3).filter((pt) => vp9Payloads.has(pt));
   if (mPayloads.length === 0) {
     console.warn(
-      "No se encontró ningún payload H264 en m=video. SDP inalterado."
+      "No se encontró ningún payload VP9 en m=video. SDP inalterado."
     );
     return sdp;
   }
@@ -40,7 +40,7 @@ function forceH264inSDP(sdp) {
     ) {
       const payloadMatch = line.match(/^a=(?:rtpmap|fmtp|rtcp-fb):(\d+)/);
       return (
-        payloadMatch && payloadMatch[1] && h264Payloads.has(payloadMatch[1])
+        payloadMatch && payloadMatch[1] && vp9Payloads.has(payloadMatch[1])
       );
     }
     return true;
@@ -58,8 +58,9 @@ function forceH264inSDP(sdp) {
     RTCPeerConnection.prototype.setLocalDescription;
   RTCPeerConnection.prototype.setLocalDescription = function (description) {
     if (description && description.sdp) {
-      description.sdp = forceH264inSDP(description.sdp);
+      description.sdp = forceVP9inSDP(description.sdp);
     }
     return originalSetLocalDescription.apply(this, [description]);
   };
 })();
+2;

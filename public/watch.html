@@ -15,6 +15,15 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+    <style>
+      body,
+      html {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+    </style>
     <script>
       tailwind.config = {
         theme: {
@@ -31,7 +40,6 @@
       };
     </script>
     <script>
-      // This script sets a CSS variable for dynamic mobile viewport height
       const setVhProperty = () => {
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty("--vh", `${vh}px`);
@@ -60,47 +68,62 @@
     <!-- Modal de estado -->
     <div
       id="modal"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 text-white text-2xl font-bold z-50"
+      class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50"
     >
-      La transmisión aún no comienza
+      <div
+        class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center"
+      >
+        <h2 class="text-2xl font-bold text-purple-400 mb-4">
+          Welcome to Let's Play Together
+        </h2>
+        <p>Take a seat, the stream is about to start</p>
+      </div>
     </div>
 
-    <!-- Panel de opciones -->
+    <!-- Options Panel -->
     <div
       id="options-panel"
-      class="fixed top-2 right-2 bg-gray-900 bg-opacity-60 text-white p-3 rounded space-y-2 hidden"
+      class="fixed top-2 right-2 hidden bg-gray-900 bg-opacity-60 text-white p-3 rounded space-y-2"
     >
-      <!-- Botón para Desmutear/Mutar -->
+      <!-- Button to Unmute/Mute -->
       <button
         id="unmute-video"
         class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
       >
         <i class="fa-solid fa-volume-high"></i>
-        <span>Desmutear</span>
+        <span>Unmute</span>
       </button>
-      <!-- Botón para Pantalla Completa (solo en desktop) -->
+      <!-- Button for Fullscreen (desktop only) -->
       <button
         id="toggle-fullscreen"
         class="w-full desktop-only bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
       >
         <i class="fa-solid fa-expand"></i>
-        <span>Pantalla Completa</span>
+        <span>Fullscreen</span>
       </button>
-      <!-- Botón para Estadísticas -->
+      <!-- Button for Statistics -->
       <button
         id="toggle-stats"
         class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
       >
         <i class="fa-solid fa-chart-line"></i>
-        <span>Estadísticas</span>
+        <span>Statistics</span>
       </button>
-      <!-- Botón para Salir del Streaming (rojo con letras blancas) -->
+      <!-- Button to Show Gamepad -->
+      <button
+        id="show-gamepad"
+        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+      >
+        <i class="fa-solid fa-gamepad"></i>
+        <span>Show Gamepad</span>
+      </button>
+      <!-- Button to Exit Streaming (red with white text) -->
       <button
         id="exit-streaming"
         class="w-full bg-red-600 px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-red-700 transition"
       >
         <i class="fa-solid fa-door-open"></i>
-        <span>Salir del Streaming</span>
+        <span>Exit Streaming</span>
       </button>
       <!-- Botón para Chat de Voz -->
       <button
@@ -131,5 +154,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/watch.js"></script>
     <script src="/voiceChat.js"></script>
+    <script src="/virtualGamepad.js"></script>
   </body>
 </html>

@@ -1,9 +1,8 @@
 const videoSenders = {};
 const peerConnections = {};
-const joystickDataByPeer = {}; // Información de joysticks por peer
-const peerLatencies = {}; // Latencias de cada peer
+const joystickDataByPeer = {};
+const peerLatencies = {};
 
-// Obtener el elemento de video desde el DOM
 const videoElement = document.querySelector("video");
 const toggleBtn = document.getElementById("toggleBroadcast");
 const changeBtn = document.getElementById("changeSource");
@@ -22,10 +21,8 @@ const config = {
 
 const socket = io();
 
-// Identificarse como broadcaster para recibir solicitudes
 socket.emit("broadcasterJoin");
 
-// Escuchar las solicitudes de conexión entrantes
 socket.on("newPeerRequest", (data) => {
   const peerList = document.getElementById("peerList");
   const li = document.createElement("li");
@@ -35,10 +32,10 @@ socket.on("newPeerRequest", (data) => {
       <span class="font-bold text-primary text-lg">${data.nick}</span>
       <div>
         <button onclick="handlePeer('${data.peerId}', true)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded mr-2">
-          Aprobar
+          Approve
         </button>
         <button onclick="handlePeer('${data.peerId}', false)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
-          Rechazar
+          Reject
         </button>
       </div>
     </div>
@@ -48,12 +45,10 @@ socket.on("newPeerRequest", (data) => {
 
 window.handlePeer = function (peerId, approved) {
   socket.emit("handlePeerRequest", { peerId, approved });
-  // Eliminar la solicitud procesada de la lista
   const li = document.getElementById(peerId);
   if (li) li.remove();
 };
 
-// Manejo de mensajes de socket
 socket.on("answer", (id, description) => {
   peerConnections[id].setRemoteDescription(description);
 });
@@ -65,7 +60,6 @@ socket.on("watcher", (id) => {
   let stream = videoElement.srcObject;
   stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
 
-  // Configuración de parámetros de codificación para la pista de video
   const videoSender = peerConnection
     .getSenders()
     .find((sender) => sender.track && sender.track.kind === "video");
@@ -75,7 +69,7 @@ socket.on("watcher", (id) => {
     if (!params.encodings) {
       params.encodings = [{}];
     }
-    params.encodings[0].maxBitrate = 80000000; // 30 Mbps
+    params.encodings[0].maxBitrate = 50000000;
     params.encodings[0].maxFramerate = 60;
     params.encodings[0].networkPriority = "high";
     params.encodings[0].priority = "high";
@@ -83,10 +77,10 @@ socket.on("watcher", (id) => {
     videoSender
       .setParameters(params)
       .then(() => {
-        console.log("Parámetros de codificación actualizados para peer", id);
+        console.log("Encoding parameters updated for peer", id);
       })
       .catch((err) => {
-        console.error("Error al actualizar los parámetros:", err);
+        console.error("Error updating parameters:", err);
       });
   }
 
@@ -119,12 +113,9 @@ socket.on("disconnectPeer", (id) => {
 socket.on("joystick-data", (data) => {
   const parts = data.id.split("-");
   const peerId = parts[0];
-  // Almacena la información del joystick para este peer.
-  // Esto indicará que el peer tiene al menos un joystick conectado.
   joystickDataByPeer[peerId] = data;
 });
 
-// Administración de peers: ping/pong y desconexión
 socket.on("admin-pong", (data) => {
   const latency = Date.now() - data.pingStart;
   peerLatencies[data.peerId] = latency;
@@ -155,8 +146,8 @@ function updatePeerList() {
       peerLatencies[peerId] !== undefined
         ? peerLatencies[peerId] + "ms"
         : "N/A";
-    li.innerHTML = `<span>${peerId} - Latencia: ${latency}</span>
-            <button onclick="disconnectPeer('${peerId}')" class="bg-red-500 text-white px-2 ml-2 rounded">Desconectar</button>`;
+    li.innerHTML = `<span>${peerId} - Latency: ${latency}</span>
+            <button onclick="disconnectPeer('${peerId}')" class="bg-red-500 text-white px-2 ml-2 rounded">Disconnect</button>`;
     peersUl.appendChild(li);
   });
 }
@@ -168,9 +159,7 @@ setInterval(() => {
   updatePeerList();
 }, 5000);
 
-// Manejo del streaming y obtención de dispositivos
 window.onunload = window.onbeforeunload = () => {
-  // Al cerrar la ventana, si hay transmisión activa se cierra la misma
   if (broadcastStream) {
     stopBroadcast();
   }
@@ -210,16 +199,65 @@ function getScreen() {
 function gotStream(stream) {
   window.stream = stream;
   videoElement.srcObject = stream;
-  startTime = Date.now(); // Marcar inicio del streaming
+  attachTrackErrorHandlers(stream);
+  startTime = Date.now();
   socket.emit("broadcaster");
   return stream;
 }
 
 function handleError(error) {
-  console.error("Error: ", error);
+  console.error("Error:", error);
 }
 
-// Estadísticas Globales (globalStats)
+function attachTrackErrorHandlers(stream) {
+  stream.getVideoTracks().forEach((track) => {
+    track.onended = () => {
+      console.error("Video track ended. Restarting broadcast...");
+      fallbackBroadcast();
+    };
+    track.onerror = (err) => {
+      console.error("Video track error:", err);
+      fallbackBroadcast();
+    };
+  });
+}
+
+function fallbackBroadcast() {
+  if (window.stream) {
+    window.stream.getTracks().forEach((track) => track.stop());
+  }
+  console.log("Attempting lower quality broadcast as fallback...");
+  navigator.mediaDevices
+    .getDisplayMedia({
+      video: {
+        frameRate: { ideal: 60, max: 60 },
+        width: { ideal: 1280, max: 1280 },
+        height: { ideal: 720, max: 720 },
+      },
+      audio: {
+        noiseSuppression: false,
+        autoGainControl: false,
+        echoCancellation: false,
+      },
+    })
+    .then((fallbackStream) => {
+      window.stream = fallbackStream;
+      videoElement.srcObject = fallbackStream;
+      const newVideoTrack = fallbackStream.getVideoTracks()[0];
+      Object.keys(peerConnections).forEach((id) => {
+        const sender = videoSenders[id];
+        if (sender) {
+          sender.replaceTrack(newVideoTrack);
+        }
+      });
+      attachTrackErrorHandlers(fallbackStream);
+      console.log("Lower quality fallback initiated.");
+    })
+    .catch((err) => {
+      console.error("Error starting fallback:", err);
+    });
+}
+
 const globalStats = {
   connectedPeers: 0,
   candidatePairBytes: 0,
@@ -235,7 +273,6 @@ const globalStats = {
 };
 
 setInterval(async () => {
-  // Acumulación de métricas globales
   globalStats.connectedPeers = Object.keys(peerConnections).length;
 
   let candidatePairBytes = 0;
@@ -280,7 +317,7 @@ setInterval(async () => {
         }
       });
     } catch (e) {
-      console.error("Error en getStats para peer", id, e);
+      console.error("Error in getStats for peer", id, e);
     }
   }
 
@@ -295,7 +332,6 @@ setInterval(async () => {
   globalStats.avgRtt =
     rttCount > 0 ? (totalRoundTripTime / rttCount).toFixed(2) + " sec" : "N/A";
 
-  // Tiempo de streaming
   const elapsedMs = startTime ? Date.now() - startTime : 0;
   const seconds = Math.floor((elapsedMs / 1000) % 60);
   const minutes = Math.floor((elapsedMs / (1000 * 60)) % 60);
@@ -308,47 +344,45 @@ setInterval(async () => {
   if (statsDiv) {
     statsDiv.innerHTML = `
   <div class="bg-gray-800 bg-opacity-70 p-4 rounded-lg text-white w-full max-w-md mx-auto">
-    <p class="font-bold text-lg mb-4 text-center">Estadísticas Globales</p>
+    <p class="font-bold text-lg mb-4 text-center">Global Statistics</p>
     <div class="grid grid-cols-1 gap-2 text-sm">
-      <p class="border-b border-gray-600 pb-1">Peering Activo: ${
+      <p class="border-b border-gray-600 pb-1">Active Peers: ${
         globalStats.connectedPeers
       }</p>
-      <p class="border-b border-gray-600 pb-1">Candidate Pair Enviado: ${(
+      <p class="border-b border-gray-600 pb-1">Candidate Pair Sent: ${(
         globalStats.candidatePairBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p class="border-b border-gray-600 pb-1">Outbound RTP Enviado: ${(
+      <p class="border-b border-gray-600 pb-1">Outbound RTP Sent: ${(
         globalStats.outboundRtpBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p class="border-b border-gray-600 pb-1">Bytes Enviados (Transport): ${(
+      <p class="border-b border-gray-600 pb-1">Transport Bytes Sent: ${(
         globalStats.transportSentBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p class="border-b border-gray-600 pb-1">Bytes Recibidos (Transport): ${(
+      <p class="border-b border-gray-600 pb-1">Transport Bytes Received: ${(
         globalStats.transportReceivedBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p class="border-b border-gray-600 pb-1">Cantidad de Reportes: ${
+      <p class="border-b border-gray-600 pb-1">Report Count: ${
         globalStats.reportCount
       }</p>
-      <p class="border-b border-gray-600 pb-1">Paquetes Enviados: ${
+      <p class="border-b border-gray-600 pb-1">Packets Sent: ${
         globalStats.packages
       }</p>
-      <p class="border-b border-gray-600 pb-1">Promedio de Pérdida de Paquetes: ${
+      <p class="border-b border-gray-600 pb-1">Average Packet Loss: ${
         globalStats.avgPacketLoss
       }</p>
-      <p class="border-b border-gray-600 pb-1">Promedio de RTT: ${
+      <p class="border-b border-gray-600 pb-1">Average RTT: ${
         globalStats.avgRtt
       }</p>
-      <p class="mt-2">Tiempo de Streaming: ${globalStats.streamingTime}</p>
+      <p class="mt-2">Streaming Time: ${globalStats.streamingTime}</p>
     </div>
   </div>
 `;
   }
 }, 1000);
-
-// Manejo de transmisión
 
 let broadcastStream = null;
 
@@ -357,7 +391,6 @@ async function startBroadcast() {
     await getStream();
     broadcastStream = window.stream;
 
-    // Reemplazar la pista de video en cada conexión existente
     const newVideoTrack = broadcastStream.getVideoTracks()[0];
     Object.keys(peerConnections).forEach((id) => {
       const sender = videoSenders[id];
@@ -368,12 +401,12 @@ async function startBroadcast() {
     videoElement.classList.remove("hidden");
     changeBtn.classList.remove("hidden");
 
-    toggleBtn.textContent = "Terminar Transmisión";
+    toggleBtn.textContent = "End Broadcast";
   } catch (err) {
-    toggleBtn.textContent = "Iniciar Transmisión";
+    toggleBtn.textContent = "Start Broadcast";
     changeBtn.classList.add("hidden");
     videoElement.classList.add("hidden");
-    console.error("Error al iniciar la transmisión:", err);
+    console.error("Error starting broadcast:", err);
   }
 }
 
@@ -383,12 +416,10 @@ function stopBroadcast() {
     broadcastStream = null;
     videoElement.srcObject = null;
 
-    // Ocultar el video y el botón de cambiar origen
     videoElement.classList.add("hidden");
     changeBtn.classList.add("hidden");
-    toggleBtn.textContent = "Iniciar Transmisión";
+    toggleBtn.textContent = "Start Broadcast";
 
-    // Cerrar todas las conexiones peer y notificar al servidor para desconectar joysticks
     Object.keys(peerConnections).forEach((peerId) => {
       if (peerConnections[peerId]) {
         peerConnections[peerId].close();
@@ -396,7 +427,6 @@ function stopBroadcast() {
         delete peerConnections[peerId];
       }
     });
-    // Reiniciar el tiempo de streaming
     startTime = null;
   }
 }
@@ -422,9 +452,9 @@ changeBtn.addEventListener("click", async () => {
           sender.replaceTrack(newVideoTrack);
         }
       });
-      console.log("Origen de video cambiado.");
+      console.log("Video source changed.");
     } catch (err) {
-      console.error("Error al cambiar el origen de video:", err);
+      console.error("Error changing video source:", err);
     }
   }
 });

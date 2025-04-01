@@ -50,7 +50,6 @@ socket.on("broadcaster", () => {
 });
 
 socket.on("admin-ping", (data) => {
-  // Responder solo si el target coincide con nuestro socket.id
   if (data.target === socket.id) {
     socket.emit("admin-pong", { peerId: socket.id, pingStart: data.pingStart });
   }
@@ -58,12 +57,23 @@ socket.on("admin-ping", (data) => {
 
 socket.on("disconnectPeer", (peerId) => {
   modal.style.display = "flex";
-  modal.textContent = "Has sido desconectado de la sesión";
+  modal.innerHTML = `
+    <div class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center">
+      <h2 class="text-2xl font-bold text-purple-400 mb-4">Disconnected</h2>
+      <p>You have been disconnected from the session</p>
+    </div>
+  `;
   clearApprovalAndClose();
 });
 
 function clearApprovalAndClose() {
   document.cookie = "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+
+  const gamepadContainer = document.getElementById("virtual-gamepad-container");
+  if (gamepadContainer) {
+    gamepadContainer.style.display = "none";
+  }
+
   if (socket && socket.connected) {
     socket.close();
   }
@@ -82,13 +92,11 @@ window.addEventListener("unload", clearApprovalAndClose);
 window.addEventListener("pagehide", clearApprovalAndClose);
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Panel de opciones y control del video
   const optionsPanel = document.getElementById("options-panel");
   const videoElem = document.getElementById("video");
   const unmuteBtn = document.getElementById("unmute-video");
   const toggleStatsButton = document.getElementById("toggle-stats");
 
-  // Creamos (o recuperamos) el contenedor global de estadísticas
   let statsOverlay = document.getElementById("client-stats");
   if (!statsOverlay) {
     statsOverlay = document.createElement("div");
@@ -106,41 +114,45 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(statsOverlay);
   }
 
-  // Toggle del panel de opciones al hacer click en la pantalla
   document.addEventListener("click", (e) => {
     if (!optionsPanel.contains(e.target)) {
-      optionsPanel.classList.toggle("hidden");
+      const gamepadContainer = document.getElementById(
+        "virtual-gamepad-container"
+      );
+      const isGamepadHidden =
+        !gamepadContainer ||
+        gamepadContainer.style.display === "none" ||
+        gamepadContainer.style.display === "";
+      if (isGamepadHidden && video.srcObject) {
+        optionsPanel.classList.toggle("hidden");
+      }
     }
   });
 
-  // Toggle de mute/desmute
   if (unmuteBtn) {
     unmuteBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       videoElem.muted = !videoElem.muted;
       const spanText = unmuteBtn.querySelector("span");
-      // Solo actualizamos el texto del span para no afectar el icono
       if (spanText) {
-        spanText.textContent = videoElem.muted ? "Desmutear" : "Mutear";
+        spanText.textContent = videoElem.muted ? "Unmute" : "Mute";
       }
     });
   }
 
-  // Toggle de estadísticas (usando el botón definido en el HTML)
   if (toggleStatsButton) {
     toggleStatsButton.addEventListener("click", () => {
       const spanText = toggleStatsButton.querySelector("span");
       if (statsOverlay.style.display === "none") {
         statsOverlay.style.display = "block";
-        if (spanText) spanText.textContent = "Ocultar Estadísticas";
+        if (spanText) spanText.textContent = "Hide Stats";
       } else {
         statsOverlay.style.display = "none";
-        if (spanText) spanText.textContent = "Estadísticas";
+        if (spanText) spanText.textContent = "Show Stats";
       }
     });
   }
 
-  // Variables para cálculo del bitrate y acumulación de bytes
   let prevBytes = 0;
   let prevTime = Date.now();
   const joinStats = { bytesReceived: 0, start: Date.now() };
@@ -156,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function updateClientStats() {
     if (!peerConnection) return;
-    // Inicia la medición del tiempo de 'decode'
     let decodeStart = performance.now();
     try {
       const statsReport = await peerConnection.getStats();
@@ -218,11 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       statsOverlay.innerHTML = `
         <p><strong>FPS:</strong> ${framesPerSecond}</p>
-        <p><strong>Pérdida de Paquetes:</strong> ${packetsLost}</p>
+        <p><strong>Packet Loss:</strong> ${packetsLost}</p>
         <p><strong>Jitter:</strong> ${jitter}</p>
-        <p><strong>Resolución:</strong> ${width} x ${height}</p>
-        <p><strong>RTT:</strong> ${rtt} ms</p>
-        <p><strong>Bytes Recibidos:</strong> ${(
+        <p><strong>Resolution:</strong> ${width} x ${height}</p>
+        <p><strong>Latency (RTT):</strong> ${rtt} ms</p>
+        <p><strong>Bytes Received:</strong> ${(
           totalInboundBytes /
           (1024 * 1024)
         ).toFixed(2)} MB</p>
@@ -235,24 +246,21 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Streaming:</strong> ${formatTime(elapsedStreamSec)}</p>
       `;
 
-      // Calcula el tiempo de decode y lo agrega a la interfaz
       const decodeTime = performance.now() - decodeStart;
       statsOverlay.innerHTML += `<p><strong>Decode Time:</strong> ${decodeTime.toFixed(
         2
       )} ms</p>`;
     } catch (err) {
-      console.error("Error al obtener estadísticas:", err);
+      console.error("Error fetching stats:", err);
     }
   }
 
   setInterval(updateClientStats, 1000);
 
-  // Opcional: envío de datos de gamepad (si se utiliza)
   const maxJoysticks = 4;
   const joystickMapping = {};
   const prevValues = {};
   function pollGamepads() {
-    // Sólo enviar datos de joystick si el streaming está activo
     if (!video.srcObject || !peerConnection) {
       requestAnimationFrame(pollGamepads);
       return;
@@ -298,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fullscreenBtn.addEventListener("click", () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch((err) => {
-          console.error(`Error al activar pantalla completa: ${err.message}`);
+          console.error(`Error enabling fullscreen: ${err.message}`);
         });
       } else {
         document.exitFullscreen();
@@ -311,21 +319,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const exitBtn = document.getElementById("exit-streaming");
   if (exitBtn) {
     exitBtn.addEventListener("click", async () => {
-      // Eliminar la cookie (ajusta el nombre si es necesario)
       document.cookie =
         "streamingEntry=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
-      // Salir de pantalla completa si está activa
       if (document.fullscreenElement) {
         try {
           await document.exitFullscreen();
         } catch (err) {
-          console.error(`Error al salir de pantalla completa: ${err.message}`);
+          console.error(`Error exiting fullscreen: ${err.message}`);
         }
       }
-
-      // Volver atrás en el historial (o redirigir a otra página)
       window.history.back();
     });
+  }
+});
+
+document.getElementById("show-gamepad").addEventListener("click", () => {
+  const gamepadContainer = document.getElementById("virtual-gamepad-container");
+  if (
+    gamepadContainer &&
+    (gamepadContainer.style.display === "none" ||
+      gamepadContainer.style.display === "")
+  ) {
+    gamepadContainer.style.display = "block";
+    gamepadContainer.style.pointerEvents = "auto";
+    document.getElementById("options-panel").classList.add("hidden");
   }
 });

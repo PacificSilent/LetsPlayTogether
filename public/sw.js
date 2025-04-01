@@ -4,7 +4,6 @@ const urlsToCache = [
   "/manifest.json",
   "/socket.io/socket.io.js",
   "/forceH264.js",
-  // Agrega aquí otros archivos estáticos (CSS, imágenes, etc.)
 ];
 
 self.addEventListener("install", (event) => {
@@ -33,7 +32,6 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
-      // Devuelve la respuesta del cache si existe, de lo contrario, la obtén de la red.
       return response || fetch(event.request);
     })
   );

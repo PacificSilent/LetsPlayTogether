@@ -1,7 +1,7 @@
 const express = require("express");
-const cookieParser = require("cookie-parser"); // Se importa cookie-parser
+const cookieParser = require("cookie-parser");
 const app = express();
-app.use(cookieParser()); // Se usa cookie-parser
+app.use(cookieParser());
 
 require("dotenv").config();
 const { sendToVigembus, disconnectJoysticks } = require("./vigembus");
@@ -35,7 +35,6 @@ app.get("/broadcast.html", auth, (req, res) => {
   res.sendFile(__dirname + "/public/broadcast.html");
 });
 
-// Nueva ruta protegida para watch.html, debe estar antes del middleware de archivos estáticos.
 app.get("/watch.html", (req, res) => {
   if (req.cookies && req.cookies.approved === "1") {
     return res.sendFile(__dirname + "/public/watch.html");
@@ -51,7 +50,6 @@ const server = http.createServer(app);
 
 const io = require("socket.io")(server);
 
-// Se recomienda dejar la ruta de archivos estáticos después de las rutas protegidas
 app.use(express.static(__dirname + "/public"));
 
 io.sockets.on("error", (e) => console.log(e));
