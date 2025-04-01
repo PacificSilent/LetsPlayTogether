@@ -132,9 +132,7 @@
           </svg>
         </div>
         <h2 class="text-2xl font-bold text-purple-400">Let's Play Together</h2>
-        <p class="text-gray-400">
-          Ingresa tu nickname para conectarte y jugar.
-        </p>
+        <p class="text-gray-400">Enter your nickname to connect and play.</p>
       </div>
 
       <!-- Card Content -->
@@ -145,7 +143,7 @@
               <input
                 id="nickname"
                 type="text"
-                placeholder="Ingresa tu nickname"
+                placeholder="Enter your nickname"
                 class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
                 required
               />
@@ -156,7 +154,7 @@
               class="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md transition-colors"
               disabled
             >
-              Conectar
+              Connect
             </button>
           </div>
         </form>
@@ -243,14 +241,14 @@
             <circle style="fill: #e65f58" cx="393.143" cy="365.714" r="9.143" />
           </svg>
           <span class="text-sm text-gray-400">
-            Jugar cooperativo local nunca fue tan fácil
+            Local co-op gaming has never been easier
           </span>
         </div>
         <p
           class="mt-6 px-3 py-1 text-xs text-gray-200 bg-purple-700 rounded-md italic"
         >
-          Para disfrutar de una experiencia de juego máxima, conecta un joystick
-          compatible (Xbox, PlayStation, etc.).
+          For the best gaming experience, connect a compatible joystick (Xbox,
+          PlayStation, etc.).
         </p>
       </div>
     </div>
@@ -264,10 +262,10 @@
         class="bg-gray-900 border-2 border-purple-500 rounded-lg shadow-xl p-8 text-center"
       >
         <h2 class="text-2xl font-bold text-purple-400 mb-4">
-          Esperando confirmación
+          Waiting for confirmation
         </h2>
         <p class="text-gray-400">
-          Por favor, espera mientras el host aprueba tu conexión...
+          Please wait while the host approves your connection...
         </p>
       </div>
     </div>
@@ -308,7 +306,7 @@
         e.preventDefault();
         const nick = nicknameInput.value.trim();
         if (!nick) {
-          showMessage("Error", "Por favor, ingresa un nombre.");
+          showMessage("Error", "Please enter a nickname.");
           return;
         }
         waitingModal.classList.remove("hidden");
@@ -359,7 +357,7 @@
           document.cookie = "approved=1; path=/";
           window.location.href = "/watch.html";
         } else {
-          showMessage("Rechazado", "Solicitud rechazada por el host.");
+          showMessage("Rejected", "Request denied by the host.");
         }
       });
     </script>

@@ -59,8 +59,8 @@ socket.on("disconnectPeer", (peerId) => {
   modal.style.display = "flex";
   modal.innerHTML = `
     <div class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center">
-      <h2 class="text-2xl font-bold text-purple-400 mb-4">Desconexión</h2>
-      <p>Has sido desconectado de la sesión</p>
+      <h2 class="text-2xl font-bold text-purple-400 mb-4">Disconnected</h2>
+      <p>You have been disconnected from the session</p>
     </div>
   `;
   clearApprovalAndClose();
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
       videoElem.muted = !videoElem.muted;
       const spanText = unmuteBtn.querySelector("span");
       if (spanText) {
-        spanText.textContent = videoElem.muted ? "Desmutear" : "Mutear";
+        spanText.textContent = videoElem.muted ? "Unmute" : "Mute";
       }
     });
   }
@@ -145,10 +145,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const spanText = toggleStatsButton.querySelector("span");
       if (statsOverlay.style.display === "none") {
         statsOverlay.style.display = "block";
-        if (spanText) spanText.textContent = "Ocultar Estadísticas";
+        if (spanText) spanText.textContent = "Hide Stats";
       } else {
         statsOverlay.style.display = "none";
-        if (spanText) spanText.textContent = "Estadísticas";
+        if (spanText) spanText.textContent = "Show Stats";
       }
     });
   }
@@ -229,11 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       statsOverlay.innerHTML = `
         <p><strong>FPS:</strong> ${framesPerSecond}</p>
-        <p><strong>Pérdida de Paquetes:</strong> ${packetsLost}</p>
+        <p><strong>Packet Loss:</strong> ${packetsLost}</p>
         <p><strong>Jitter:</strong> ${jitter}</p>
-        <p><strong>Resolución:</strong> ${width} x ${height}</p>
+        <p><strong>Resolution:</strong> ${width} x ${height}</p>
         <p><strong>Latency (RTT):</strong> ${rtt} ms</p>
-        <p><strong>Bytes Recibidos:</strong> ${(
+        <p><strong>Bytes Received:</strong> ${(
           totalInboundBytes /
           (1024 * 1024)
         ).toFixed(2)} MB</p>
@@ -251,7 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
         2
       )} ms</p>`;
     } catch (err) {
-      console.error("Error al obtener estadísticas:", err);
+      console.error("Error fetching stats:", err);
     }
   }
 
@@ -306,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fullscreenBtn.addEventListener("click", () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch((err) => {
-          console.error(`Error al activar pantalla completa: ${err.message}`);
+          console.error(`Error enabling fullscreen: ${err.message}`);
         });
       } else {
         document.exitFullscreen();
@@ -326,7 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           await document.exitFullscreen();
         } catch (err) {
-          console.error(`Error al salir de pantalla completa: ${err.message}`);
+          console.error(`Error exiting fullscreen: ${err.message}`);
         }
       }
       window.history.back();

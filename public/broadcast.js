@@ -32,10 +32,10 @@ socket.on("newPeerRequest", (data) => {
       <span class="font-bold text-primary text-lg">${data.nick}</span>
       <div>
         <button onclick="handlePeer('${data.peerId}', true)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded mr-2">
-          Aprobar
+          Approve
         </button>
         <button onclick="handlePeer('${data.peerId}', false)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
-          Rechazar
+          Reject
         </button>
       </div>
     </div>
@@ -77,10 +77,10 @@ socket.on("watcher", (id) => {
     videoSender
       .setParameters(params)
       .then(() => {
-        console.log("Parámetros de codificación actualizados para peer", id);
+        console.log("Encoding parameters updated for peer", id);
       })
       .catch((err) => {
-        console.error("Error al actualizar los parámetros:", err);
+        console.error("Error updating parameters:", err);
       });
   }
 
@@ -146,8 +146,8 @@ function updatePeerList() {
       peerLatencies[peerId] !== undefined
         ? peerLatencies[peerId] + "ms"
         : "N/A";
-    li.innerHTML = `<span>${peerId} - Latencia: ${latency}</span>
-            <button onclick="disconnectPeer('${peerId}')" class="bg-red-500 text-white px-2 ml-2 rounded">Desconectar</button>`;
+    li.innerHTML = `<span>${peerId} - Latency: ${latency}</span>
+            <button onclick="disconnectPeer('${peerId}')" class="bg-red-500 text-white px-2 ml-2 rounded">Disconnect</button>`;
     peersUl.appendChild(li);
   });
 }
@@ -206,17 +206,17 @@ function gotStream(stream) {
 }
 
 function handleError(error) {
-  console.error("Error: ", error);
+  console.error("Error:", error);
 }
 
 function attachTrackErrorHandlers(stream) {
   stream.getVideoTracks().forEach((track) => {
     track.onended = () => {
-      console.error("El track de video finalizó. Reiniciando transmisión...");
+      console.error("Video track ended. Restarting broadcast...");
       fallbackBroadcast();
     };
     track.onerror = (err) => {
-      console.error("Error en el track de video:", err);
+      console.error("Video track error:", err);
       fallbackBroadcast();
     };
   });
@@ -226,7 +226,7 @@ function fallbackBroadcast() {
   if (window.stream) {
     window.stream.getTracks().forEach((track) => track.stop());
   }
-  console.log("Intentando transmisión de baja calidad como fallback...");
+  console.log("Attempting lower quality broadcast as fallback...");
   navigator.mediaDevices
     .getDisplayMedia({
       video: {
@@ -251,10 +251,10 @@ function fallbackBroadcast() {
         }
       });
       attachTrackErrorHandlers(fallbackStream);
-      console.log("Fallback de baja calidad iniciado.");
+      console.log("Lower quality fallback initiated.");
     })
     .catch((err) => {
-      console.error("Error al iniciar el fallback:", err);
+      console.error("Error starting fallback:", err);
     });
 }
 
@@ -317,7 +317,7 @@ setInterval(async () => {
         }
       });
     } catch (e) {
-      console.error("Error en getStats para peer", id, e);
+      console.error("Error in getStats for peer", id, e);
     }
   }
 
@@ -344,40 +344,40 @@ setInterval(async () => {
   if (statsDiv) {
     statsDiv.innerHTML = `
   <div class="bg-gray-800 bg-opacity-70 p-4 rounded-lg text-white w-full max-w-md mx-auto">
-    <p class="font-bold text-lg mb-4 text-center">Estadísticas Globales</p>
+    <p class="font-bold text-lg mb-4 text-center">Global Statistics</p>
     <div class="grid grid-cols-1 gap-2 text-sm">
-      <p class="border-b border-gray-600 pb-1">Peering Activo: ${
+      <p class="border-b border-gray-600 pb-1">Active Peers: ${
         globalStats.connectedPeers
       }</p>
-      <p class="border-b border-gray-600 pb-1">Candidate Pair Enviado: ${(
+      <p class="border-b border-gray-600 pb-1">Candidate Pair Sent: ${(
         globalStats.candidatePairBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p class="border-b border-gray-600 pb-1">Outbound RTP Enviado: ${(
+      <p class="border-b border-gray-600 pb-1">Outbound RTP Sent: ${(
         globalStats.outboundRtpBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p class="border-b border-gray-600 pb-1">Bytes Enviados (Transport): ${(
+      <p class="border-b border-gray-600 pb-1">Transport Bytes Sent: ${(
         globalStats.transportSentBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p class="border-b border-gray-600 pb-1">Bytes Recibidos (Transport): ${(
+      <p class="border-b border-gray-600 pb-1">Transport Bytes Received: ${(
         globalStats.transportReceivedBytes /
         (1024 * 1024)
       ).toFixed(2)} MB</p>
-      <p class="border-b border-gray-600 pb-1">Cantidad de Reportes: ${
+      <p class="border-b border-gray-600 pb-1">Report Count: ${
         globalStats.reportCount
       }</p>
-      <p class="border-b border-gray-600 pb-1">Paquetes Enviados: ${
+      <p class="border-b border-gray-600 pb-1">Packets Sent: ${
         globalStats.packages
       }</p>
-      <p class="border-b border-gray-600 pb-1">Promedio de Pérdida de Paquetes: ${
+      <p class="border-b border-gray-600 pb-1">Average Packet Loss: ${
         globalStats.avgPacketLoss
       }</p>
-      <p class="border-b border-gray-600 pb-1">Promedio de RTT: ${
+      <p class="border-b border-gray-600 pb-1">Average RTT: ${
         globalStats.avgRtt
       }</p>
-      <p class="mt-2">Tiempo de Streaming: ${globalStats.streamingTime}</p>
+      <p class="mt-2">Streaming Time: ${globalStats.streamingTime}</p>
     </div>
   </div>
 `;
@@ -401,12 +401,12 @@ async function startBroadcast() {
     videoElement.classList.remove("hidden");
     changeBtn.classList.remove("hidden");
 
-    toggleBtn.textContent = "Terminar Transmisión";
+    toggleBtn.textContent = "End Broadcast";
   } catch (err) {
-    toggleBtn.textContent = "Iniciar Transmisión";
+    toggleBtn.textContent = "Start Broadcast";
     changeBtn.classList.add("hidden");
     videoElement.classList.add("hidden");
-    console.error("Error al iniciar la transmisión:", err);
+    console.error("Error starting broadcast:", err);
   }
 }
 
@@ -418,7 +418,7 @@ function stopBroadcast() {
 
     videoElement.classList.add("hidden");
     changeBtn.classList.add("hidden");
-    toggleBtn.textContent = "Iniciar Transmisión";
+    toggleBtn.textContent = "Start Broadcast";
 
     Object.keys(peerConnections).forEach((peerId) => {
       if (peerConnections[peerId]) {
@@ -452,9 +452,9 @@ changeBtn.addEventListener("click", async () => {
           sender.replaceTrack(newVideoTrack);
         }
       });
-      console.log("Origen de video cambiado.");
+      console.log("Video source changed.");
     } catch (err) {
-      console.error("Error al cambiar el origen de video:", err);
+      console.error("Error changing video source:", err);
     }
   }
 });
