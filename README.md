@@ -16,7 +16,7 @@ Select the demo link for each video to view the complete demonstration.
 
 [DEMO 1](https://drive.google.com/file/d/18nEY7SVjaG-YvUxfSAcv4vzjBHrM6ujw/view?usp=sharing)
 
-[DEMO 2](https://drive.google.com/file/d/1_s7nLREOxBStOLVsBJHl8fRB4zJ8KzfG/view?usp=sharing)
+[DEMO 2](https://drive.google.com/file/d/1Yh2w4eSfkxDI_FfOqVREO4dD96mtr3fN/view?usp=sharing)
 
 ## Features
 
