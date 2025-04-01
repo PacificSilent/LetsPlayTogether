@@ -6,19 +6,17 @@ This project allows you to connect other users to your PC via the web—similar 
 
 ### Demo Videos
 
-#### Demo Video 1
+Below, you can view demonstration videos of the project showcasing various functionalities:
 
-<video width="640" height="360" controls>
-    <source src="demo\demo1.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
+- **Real-time Streaming:** Watch how video and audio are transmitted using WebRTC.
+- **PWA in Action:** Experience the seamless installation and native app-like usage.
+- **Joystick Integration:** See how remote control is enabled through joystick support.
 
-#### Demo Video 2
+Select the demo link for each video to view the complete demonstration.
 
-<video width="640" height="360" controls>
-    <source src="demo\demo2.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
+[DEMO 1](https://drive.google.com/uc?export=download&id=18nEY7SVjaG-YvUxfSAcv4vzjBHrM6ujw)
+
+[DEMO 2](https://drive.google.com/uc?export=download&id=1_s7nLREOxBStOLVsBJHl8fRB4zJ8KzfG)
 
 ## Features
 
