@@ -14,9 +14,9 @@ Below, you can view demonstration videos of the project showcasing various funct
 
 Select the demo link for each video to view the complete demonstration.
 
-[DEMO 1](https://drive.google.com/uc?export=download&id=18nEY7SVjaG-YvUxfSAcv4vzjBHrM6ujw)
+[DEMO 1](https://drive.google.com/file/d/18nEY7SVjaG-YvUxfSAcv4vzjBHrM6ujw/view?usp=sharing)
 
-[DEMO 2](https://drive.google.com/uc?export=download&id=1_s7nLREOxBStOLVsBJHl8fRB4zJ8KzfG)
+[DEMO 2](https://drive.google.com/file/d/1_s7nLREOxBStOLVsBJHl8fRB4zJ8KzfG/view?usp=sharing)
 
 ## Features
 
