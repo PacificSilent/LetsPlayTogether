@@ -1,70 +1,86 @@
-# Lets Play Together
+# Let's Play Together
 
-Este proyecto permite conectar a otras personas a tu PC a través de la web, de forma similar a lo que hace Parsec, pero aprovechando la compatibilidad con todos los navegadores. La aplicación utiliza WebRTC para transmitir video y audio en tiempo real, permitiendo que el usuario (broadcaster) comparta la pantalla o una ventana mientras los clientes (watchers) se conectan bajo petición.
+This project allows you to connect other users to your PC via the web—similar to Parsec but built for universal browser compatibility. The application leverages WebRTC to stream video and audio in real time, enabling the broadcaster to share either their entire screen or a specific window, while watchers join on demand.
 
-**Nota:** Este proyecto es un fork basado en [WebRTC-Video-Broadcast](https://github.com/TannerGabriel/WebRTC-Video-Broadcast).
+**Note:** This project is a fork based on [WebRTC-Video-Broadcast](https://github.com/TannerGabriel/WebRTC-Video-Broadcast).
 
-## Características
+### Demo Videos
 
-- **Transmisión en tiempo real:** Envia video y audio usando tecnología WebRTC.
-- **Soporte PWA (Progressive Web App):** La aplicación puede ser instalada como una app en dispositivos móviles o de escritorio, ofreciendo una experiencia nativa.
-- **Soporte para joysticks:** Permite interactuar mediante controladores, enviando datos de entrada para simular una experiencia similar a la de videojuegos remotos.
-- **Compatibilidad multi-navegador:** Funciona en los principales navegadores web, eliminando la necesidad de instalar software adicional.
-- **Seguridad y autenticación:** El acceso a ciertas rutas se protege mediante autenticación básica y validación de cookies.
-- **Control dinámico de la transmisión:** Ajusta parámetros de bitrate y resolución en función de las condiciones de red para mejorar la calidad de la transmisión.
-- **Integración de sockets:** Comunicación en tiempo real usando Socket.IO para enviar ofertas y candidatos durante el proceso de conexión Peer-to-Peer.
+#### Demo Video 1
 
-## Cómo Empezar
+<video width="640" height="360" controls>
+    <source src="demo\demo1.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
-### Iniciando la Aplicación
+#### Demo Video 2
 
-#### Usando Node.js
+<video width="640" height="360" controls>
+    <source src="demo\demo2.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+## Features
+
+- **Real-time Streaming:** Sends video and audio using WebRTC technology.
+- **PWA Support (Progressive Web App):** Install the application on mobile or desktop devices for a native-like experience.
+- **Joystick Support:** Allows interaction via controllers by transmitting input data, simulating a remote gaming experience.
+- **Cross-Browser Compatibility:** Works in major web browsers, eliminating the need to install additional software.
+- **Security and Authentication:** Protects certain pathways with basic authentication and cookie validation.
+- **Dynamic Control of Stream Parameters:** Automatically adjusts bitrate and resolution based on network conditions.
+- **Socket Integration:** Uses Socket.IO for real-time communication, managing offers and ICE candidates during peer-to-peer connection setup.
+
+## Getting Started
+
+### Running the Application
+
+#### Using Node.js
 
 ```bash
-# Instalar dependencias del servidor
+# Install server dependencies
 npm install
 
-# Iniciar el servidor
+# Start the server
 node server
 ```
 
-#### Usando Docker
+#### Using Docker
 
 ```bash
-# Construir la imagen
+# Build the Docker image
 docker build --tag webrtcvideobroadcast .
 
-# Ejecutar el contenedor
+# Run the container
 docker run -d -p 4000:4000 webrtcvideobroadcast
 ```
 
-### Prueba de la Aplicación
+### Testing the Application
 
-1. Accede a `localhost:4000/broadcast.html` para iniciar una transmisión (broadcaster). Se solicitará autenticación para proteger el acceso.
-2. Abre `localhost:4000` desde otro dispositivo o ventana para ver la transmisión en vivo como cliente (watcher).
+1. Open `localhost:4000/broadcast.html` to initiate a stream as the broadcaster; authentication will be required.
+2. Open `localhost:4000` on another device or browser window to watch the live stream.
 
-## Configuración Adicional
+## Additional Configuration
 
-### Soporte PWA
+### PWA Support
 
-La aplicación incluye un Service Worker y un archivo de manifiesto para ofrecer una experiencia PWA. Esto permite la instalación de la aplicación en dispositivos móviles y de escritorio, con un rendimiento optimizado y la posibilidad de trabajar fuera de línea en ciertos casos.
+The application includes a Service Worker and manifest file to provide a progressive web app experience, allowing installation on mobile and desktop with offline capabilities in some cases.
 
-### Soporte para Joysticks
+### Joystick Support
 
-Integrado para mejorar la interacción, el proyecto puede recibir entradas desde joysticks. Esto hace posible conectar controladores (por ejemplo, mediante VigemClient) para enviar datos de ejes y botones, permitiendo usar la PC de forma remota similar a una experiencia gaming.
+Integrated joystick input enables remote control similar to gaming setups. Connect your controller (e.g., via VigemClient) to send axis and button data.
 
-### Agregar un Servidor TURN
+### Adding a TURN Server
 
-En escenarios donde la conexión directa falla, puedes agregar un servidor TURN. Edita las configuraciones en los archivos `broadcast.js` y `watch.js` para incluir tus credenciales y detalles del servidor TURN.
+If direct connections fail, you can configure a TURN server. Edit the settings in the `broadcast.js` and `watch.js` files to include your TURN server details and credentials.
 
-## Documentación Adicional
+## Additional Documentation
 
-- **Tutorial:** Se explica el funcionamiento y la implementación en [este tutorial](https://gabrieltanner.org/blog/webrtc-video-broadcast).
-- **Código y Configuración:** El repositorio incluye ejemplos de configuración para ESLint, Docker, y GitHub Actions para CodeQL y gestión de issues.
-- **Licencia:** El proyecto está licenciado bajo la Licencia MIT.
+- **Tutorial:** Detailed explanation of the implementation is available in [this tutorial](https://gabrieltanner.org/blog/webrtc-video-broadcast).
+- **Code and Configuration:** The repository includes ESLint configurations, Docker settings, and GitHub Actions for CodeQL and issue management.
+- **License:** Distributed under the MIT License.
 
-¡Disfruta conectando, compartiendo y jugando de forma remota a través de la web!
+Enjoy connecting, sharing, and playing remotely through the web!
 
-## Soporte y Contribuciones
+## Support and Contributions
 
-Si encuentras algún problema o tienes ideas para nuevas funciones, por favor revisa los issues en GitHub o envía un pull request. También puedes apoyar el proyecto mediante [Buy Me A Coffee](https://buymeacoffee.com/pacificsilent).
+If you encounter issues or have ideas for new features, check out the GitHub issues or submit a pull request. You can also support the project via [Buy Me A Coffee](https://buymeacoffee.com/pacificsilent).
