@@ -60,30 +60,6 @@ socket.on("watcher", (id) => {
   let stream = videoElement.srcObject;
   stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
 
-  const videoSender = peerConnection
-    .getSenders()
-    .find((sender) => sender.track && sender.track.kind === "video");
-  if (videoSender) {
-    videoSenders[id] = videoSender;
-    const params = videoSender.getParameters();
-    if (!params.encodings) {
-      params.encodings = [{}];
-    }
-    params.encodings[0].maxBitrate = 50000000;
-    params.encodings[0].maxFramerate = 60;
-    params.encodings[0].networkPriority = "high";
-    params.encodings[0].priority = "high";
-    params.degradationPreference = "maintain-framerate";
-    videoSender
-      .setParameters(params)
-      .then(() => {
-        console.log("Encoding parameters updated for peer", id);
-      })
-      .catch((err) => {
-        console.error("Error updating parameters:", err);
-      });
-  }
-
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("candidate", id, event.candidate);
@@ -172,28 +148,26 @@ function getDevices() {
   return navigator.mediaDevices.enumerateDevices();
 }
 
+// Reemplazar la función getScreen para obtener el video de la cámara
+function getCamera() {
+  return navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: {
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
+    },
+  });
+}
+
+// Actualizar getStream para usar la cámara
 function getStream() {
   if (window.stream) {
     window.stream.getTracks().forEach((track) => {
       track.stop();
     });
   }
-  return getScreen().then(gotStream).catch(handleError);
-}
-
-function getScreen() {
-  return navigator.mediaDevices.getDisplayMedia({
-    video: {
-      frameRate: { ideal: 60, max: 60 },
-      width: { ideal: 1920, max: 1920 },
-      height: { ideal: 1080, max: 1080 },
-    },
-    audio: {
-      noiseSuppression: false,
-      autoGainControl: false,
-      echoCancellation: false,
-    },
-  });
+  return getCamera().then(gotStream).catch(handleError);
 }
 
 function gotStream(stream) {
@@ -222,22 +196,19 @@ function attachTrackErrorHandlers(stream) {
   });
 }
 
+// (Opcional) Actualizar fallbackBroadcast para reintentarlo a menor calidad usando la cámara
 function fallbackBroadcast() {
   if (window.stream) {
     window.stream.getTracks().forEach((track) => track.stop());
   }
-  console.log("Attempting lower quality broadcast as fallback...");
+  console.log("Attempting lower quality camera broadcast as fallback...");
   navigator.mediaDevices
-    .getDisplayMedia({
-      video: {
-        frameRate: { ideal: 60, max: 60 },
-        width: { ideal: 1280, max: 1280 },
-        height: { ideal: 720, max: 720 },
-      },
+    .getUserMedia({
+      video: true,
       audio: {
+        echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
-        echoCancellation: false,
       },
     })
     .then((fallbackStream) => {
