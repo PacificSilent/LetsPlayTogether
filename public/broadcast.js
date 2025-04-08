@@ -60,6 +60,30 @@ socket.on("watcher", (id) => {
   let stream = videoElement.srcObject;
   stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
 
+  const videoSender = peerConnection
+    .getSenders()
+    .find((sender) => sender.track && sender.track.kind === "video");
+  if (videoSender) {
+    videoSenders[id] = videoSender;
+    const params = videoSender.getParameters();
+    if (!params.encodings) {
+      params.encodings = [{}];
+    }
+    params.encodings[0].maxBitrate = 50000000;
+    params.encodings[0].maxFramerate = 60;
+    params.encodings[0].networkPriority = "high";
+    params.encodings[0].priority = "high";
+    params.degradationPreference = "balanced";
+    videoSender
+      .setParameters(params)
+      .then(() => {
+        console.log("Encoding parameters updated for peer", id);
+      })
+      .catch((err) => {
+        console.error("Error updating parameters:", err);
+      });
+  }
+
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("candidate", id, event.candidate);
