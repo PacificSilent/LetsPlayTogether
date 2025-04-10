@@ -4,19 +4,64 @@ const config = {
     // { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:pacificsilent.localto.net:3857" },
     {
-      urls: "turn:pacificsilent.localto.net:3857?transport=tcp",
+      urls: "turn:pacificsilent.localto.net:3857",
       username: "test",
       credential: "test",
     },
   ],
 };
 
-const socket = io.connect(window.location.origin);
+// Se añaden opciones para reconexión automática
+const socket = io.connect(window.location.origin, {
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 3000,
+});
+
+socket.on("reconnect_attempt", (attempt) => {
+  console.log(`Reconnection attempt #${attempt}`);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("Disconnected from server:", reason);
+  // Aquí podrías agregar acciones adicionales o enviar el log al servidor si es necesario.
+});
+
 const video = document.getElementById("video");
 const modal = document.getElementById("modal");
 
 socket.on("offer", (id, description) => {
   peerConnection = new RTCPeerConnection(config);
+
+  // Log adicional para el ciclo de vida de la conexión WebRTC
+  peerConnection.onconnectionstatechange = () => {
+    console.log(
+      "WebRTC connection state changed to:",
+      peerConnection.connectionState
+    );
+    if (
+      peerConnection.connectionState === "disconnected" ||
+      peerConnection.connectionState === "failed"
+    ) {
+      console.warn(
+        `WebRTC connection ${peerConnection.connectionState}. Se ha detectado fallo en la sesión. Reintentando conexión...`
+      );
+      // Se pueden agregar logs adicionales aquí, por ejemplo, capturar el estado ICE
+      console.log("ICE connection state:", peerConnection.iceConnectionState);
+      peerConnection.close();
+      peerConnection = null;
+      socket.emit("watcher");
+    }
+  };
+
+  // Además, agrega un listener para cambios en el estado ICE que puede ofrecer más detalles:
+  peerConnection.oniceconnectionstatechange = () => {
+    console.log(
+      "ICE connection state changed to:",
+      peerConnection.iceConnectionState
+    );
+  };
+
   peerConnection
     .setRemoteDescription(description)
     .then(() => peerConnection.createAnswer())

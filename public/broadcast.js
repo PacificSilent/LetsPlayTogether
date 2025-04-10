@@ -12,7 +12,7 @@ const config = {
     // { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:pacificsilent.localto.net:3857" },
     {
-      urls: "turn:pacificsilent.localto.net:3857?transport=tcp",
+      urls: "turn:pacificsilent.localto.net:3857",
       username: "test",
       credential: "test",
     },
@@ -106,10 +106,7 @@ socket.on("watcher", (id) => {
     if (!params.encodings) {
       params.encodings = [{}];
     }
-    params.encodings[0].maxBitrate = 50000000;
-    params.encodings[0].maxFramerate = 60;
-    params.encodings[0].networkPriority = "high";
-    params.encodings[0].priority = "high";
+    params.encodings[0].maxBitrate = 80000000;
     params.degradationPreference = "maintain-framerate";
     videoSender
       .setParameters(params)
