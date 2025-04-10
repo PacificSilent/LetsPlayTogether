@@ -11,6 +11,8 @@ const config = {
   ],
 };
 
+let iceTimeout = null;
+
 const socket = io.connect(window.location.origin);
 const video = document.getElementById("video");
 const modal = document.getElementById("modal");
@@ -31,6 +33,30 @@ socket.on("offer", (id, description) => {
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("candidate", id, event.candidate);
+    }
+  };
+  peerConnection.oniceconnectionstatechange = () => {
+    const state = peerConnection.iceConnectionState;
+    console.log("ICE state changed to", state);
+
+    if (state === "connected" || state === "completed") {
+      // Clear timeout if we connected
+      if (iceTimeout) clearTimeout(iceTimeout);
+    }
+
+    if (state === "checking") {
+      // Give ICE some time to try connecting
+      if (!iceTimeout) {
+        iceTimeout = setTimeout(() => {
+          console.warn("ICE connection taking too long, closing.");
+          peerConnection.close();
+        }, 20000); // ⏳ Wait 15 seconds before considering it failed
+      }
+    }
+
+    if (state === "failed" || state === "disconnected") {
+      console.error("ICE failed or disconnected.");
+      peerConnection.close();
     }
   };
 });
@@ -117,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", (e) => {
     if (!optionsPanel.contains(e.target)) {
       const gamepadContainer = document.getElementById(
-        "virtual-gamepad-container"
+        "virtual-gamepad-container",
       );
       const isGamepadHidden =
         !gamepadContainer ||
@@ -241,14 +267,14 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Audio Codec:</strong> ${audioCodec}</p>
         <p><strong>Audio Sample Rate:</strong> ${audioSampleRate}</p>
         <p><strong>Bitrate:</strong> ${(currentBitrate / 1000).toFixed(
-          2
+          2,
         )} kbps</p>
         <p><strong>Streaming:</strong> ${formatTime(elapsedStreamSec)}</p>
       `;
 
       const decodeTime = performance.now() - decodeStart;
       statsOverlay.innerHTML += `<p><strong>Decode Time:</strong> ${decodeTime.toFixed(
-        2
+        2,
       )} ms</p>`;
     } catch (err) {
       console.error("Error fetching stats:", err);
