@@ -13,7 +13,7 @@ function auth(req, res, next) {
       "WWW-Authenticate",
       'Basic realm="Enter username and password"'
     );
-    return res.redirect("/access-denied.html");
+    return res.status(401).send("Acceso denegado: se requiere autenticación.");
   }
   const encoded = authHeader.split(" ")[1] || "";
   const decoded = Buffer.from(encoded, "base64").toString("utf8");
@@ -28,7 +28,7 @@ function auth(req, res, next) {
     "WWW-Authenticate",
     'Basic realm="Enter username and password"'
   );
-  return res.redirect("/access-denied.html");
+  return res.status(401).send("Credenciales inválidas.");
 }
 
 app.get("/broadcast.html", auth, (req, res) => {
@@ -71,6 +71,8 @@ io.sockets.on("connection", (socket) => {
     socket.to(id).emit("candidate", socket.id, message);
   });
   socket.on("joystick-data", (data) => {
+    console.log("joystick-data", data);
+
     sendToVigembus(data);
   });
   socket.on("disconnect", () => {

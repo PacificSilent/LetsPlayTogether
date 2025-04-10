@@ -9,10 +9,10 @@ const changeBtn = document.getElementById("changeSource");
 
 const config = {
   iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:pacificsilent.localto.net:1546" },
+    // { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:pacificsilent.localto.net:3857" },
     {
-      urls: "turn:pacificsilent.localto.net:1546?transport=tcp",
+      urls: "turn:pacificsilent.localto.net:3857?transport=tcp",
       username: "test",
       credential: "test",
     },
