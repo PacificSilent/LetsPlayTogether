@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <!-- Para viewport dinámico en móviles -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
     <title>Let's Play Together</title>
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
@@ -29,11 +32,11 @@
         theme: {
           extend: {
             colors: {
-              secondary: "#8ECAE6",
-              accent: "#219EBC",
-              dark: "#023047",
-              warning: "#FFB703",
-              primary: "#FB8500",
+              primary: "#9333ea", // Purple
+              secondary: "#d8b4fe", // Light purple
+              dark: "#0f172a", // Dark blue/gray
+              accent: "#7e22ce", // Darker purple
+              warning: "#f59e0b", // Amber
             },
           },
         },
@@ -49,11 +52,11 @@
     </script>
   </head>
   <body
-    class="bg-black text-secondary w-screen"
+    class="bg-gradient-to-br bg-black from-gray-900 to-gray-800 text-white w-screen"
     style="height: calc(var(--vh, 1vh) * 100)"
   >
     <div
-      class="video-container fixed top-0 left-0 w-screen h-screen overflow-hidden"
+      class="video-container fixed top-0 left-0 w-screen h-screen overflow-hidden z-0"
       style="height: calc(var(--vh, 1vh) * 100)"
     >
       <video
@@ -61,34 +64,34 @@
         playsinline
         autoplay
         muted
-        class="w-full h-full object-contain"
+        class="w-full h-full object-contain bg-gray-950"
       ></video>
     </div>
 
     <!-- Modal de estado -->
     <div
       id="modal"
-      class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50"
     >
       <div
-        class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center"
+        class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center max-w-md mx-auto"
       >
         <h2 class="text-2xl font-bold text-purple-400 mb-4">
           Welcome to Let's Play Together
         </h2>
-        <p>Take a seat, the stream is about to start</p>
+        <p class="text-gray-300">Take a seat, the stream is about to start</p>
       </div>
     </div>
 
     <!-- Options Panel -->
     <div
       id="options-panel"
-      class="fixed top-2 right-2 hidden bg-gray-900 bg-opacity-60 text-white p-3 rounded space-y-2"
+      class="fixed top-16 right-4 hidden bg-gray-900 bg-opacity-90 text-white p-4 rounded-lg shadow-lg space-y-3 border border-purple-700 z-30"
     >
       <!-- Button to Unmute/Mute -->
       <button
         id="unmute-video"
-        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+        class="w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
       >
         <i class="fa-solid fa-volume-high"></i>
         <span>Unmute</span>
@@ -96,7 +99,7 @@
       <!-- Button for Fullscreen (desktop only) -->
       <button
         id="toggle-fullscreen"
-        class="w-full desktop-only bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+        class="w-full desktop-only bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
       >
         <i class="fa-solid fa-expand"></i>
         <span>Fullscreen</span>
@@ -104,7 +107,7 @@
       <!-- Button for Statistics -->
       <button
         id="toggle-stats"
-        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+        class="w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
       >
         <i class="fa-solid fa-chart-line"></i>
         <span>Statistics</span>
@@ -112,7 +115,7 @@
       <!-- Button to Show Gamepad -->
       <button
         id="show-gamepad"
-        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
+        class="w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
       >
         <i class="fa-solid fa-gamepad"></i>
         <span>Show Gamepad</span>
@@ -120,7 +123,7 @@
       <!-- Button to Exit Streaming (red with white text) -->
       <button
         id="exit-streaming"
-        class="w-full bg-red-600 px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-red-700 transition"
+        class="w-full bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
       >
         <i class="fa-solid fa-door-open"></i>
         <span>Exit Streaming</span>

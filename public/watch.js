@@ -24,7 +24,6 @@ socket.on("reconnect_attempt", (attempt) => {
 
 socket.on("disconnect", (reason) => {
   console.log("Disconnected from server:", reason);
-  // Aquí podrías agregar acciones adicionales o enviar el log al servidor si es necesario.
 });
 
 const video = document.getElementById("video");
@@ -103,9 +102,19 @@ socket.on("admin-ping", (data) => {
 socket.on("disconnectPeer", (peerId) => {
   modal.style.display = "flex";
   modal.innerHTML = `
-    <div class="bg-gray-900 border-2 border-purple-500 text-white rounded-lg shadow-xl p-8 text-center">
+    <div class="bg-gray-900 border-2 border-purple-700 text-white rounded-lg shadow-xl p-8 text-center max-w-md mx-auto">
+      <div class="mb-4 flex justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-red-500">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+        </svg>
+      </div>
       <h2 class="text-2xl font-bold text-purple-400 mb-4">Disconnected</h2>
-      <p>You have been disconnected from the session</p>
+      <p class="text-gray-300 mb-4">You have been disconnected from the session</p>
+      <div class="mt-6">
+        <a href="/" class="bg-primary hover:bg-accent text-white px-4 py-2 rounded-lg font-medium transition-colors inline-block">
+          Return to Home
+        </a>
+      </div>
     </div>
   `;
   clearApprovalAndClose();
@@ -147,15 +156,19 @@ document.addEventListener("DOMContentLoaded", () => {
     statsOverlay = document.createElement("div");
     statsOverlay.id = "client-stats";
     statsOverlay.style.position = "fixed";
-    statsOverlay.style.top = "50px";
+    statsOverlay.style.top = "80px";
     statsOverlay.style.left = "10px";
-    statsOverlay.style.background = "rgba(0, 0, 0, 0.7)";
+    statsOverlay.style.background = "rgba(17, 24, 39, 0.9)";
     statsOverlay.style.color = "#fff";
-    statsOverlay.style.padding = "10px";
-    statsOverlay.style.borderRadius = "5px";
+    statsOverlay.style.padding = "15px";
+    statsOverlay.style.borderRadius = "8px";
     statsOverlay.style.zIndex = "50";
     statsOverlay.style.fontSize = "12px";
     statsOverlay.style.display = "none";
+    statsOverlay.style.border = "1px solid rgb(147, 51, 234)";
+    statsOverlay.style.backdropFilter = "blur(5px)";
+    statsOverlay.style.boxShadow =
+      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
     document.body.appendChild(statsOverlay);
   }
 
@@ -179,8 +192,15 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
       videoElem.muted = !videoElem.muted;
       const spanText = unmuteBtn.querySelector("span");
+      const iconElem = unmuteBtn.querySelector("i");
       if (spanText) {
         spanText.textContent = videoElem.muted ? "Unmute" : "Mute";
+        // Cambiar el icono también
+        if (iconElem) {
+          iconElem.className = videoElem.muted
+            ? "fa-solid fa-volume-high"
+            : "fa-solid fa-volume-xmark";
+        }
       }
     });
   }
@@ -272,35 +292,56 @@ document.addEventListener("DOMContentLoaded", () => {
         ? Math.floor((Date.now() - joinStats.start) / 1000)
         : 0;
 
-      statsOverlay.innerHTML = `
-        <p><strong>FPS:</strong> ${framesPerSecond}</p>
-        <p><strong>Packet Loss:</strong> ${packetsLost}</p>
-        <p><strong>Jitter:</strong> ${jitter}</p>
-        <p><strong>Resolution:</strong> ${width} x ${height}</p>
-        <p><strong>Latency (RTT):</strong> ${rtt} ms</p>
-        <p><strong>Bytes Received:</strong> ${(
-          totalInboundBytes /
-          (1024 * 1024)
-        ).toFixed(2)} MB</p>
-        <p><strong>Video Codec:</strong> ${videoCodec}</p>
-        <p><strong>Audio Codec:</strong> ${audioCodec}</p>
-        <p><strong>Audio Sample Rate:</strong> ${audioSampleRate}</p>
-        <p><strong>Bitrate:</strong> ${(currentBitrate / 1000).toFixed(
-          2
-        )} kbps</p>
-        <p><strong>Streaming:</strong> ${formatTime(elapsedStreamSec)}</p>
-      `;
-
+      // Calcular decodeTime antes de usarlo en el template
       const decodeTime = performance.now() - decodeStart;
-      statsOverlay.innerHTML += `<p><strong>Decode Time:</strong> ${decodeTime.toFixed(
-        2
-      )} ms</p>`;
+
+      statsOverlay.innerHTML = `
+        <div class="space-y-2">
+          <h3 class="font-bold text-purple-400 border-b border-purple-700 pb-1 mb-2">Stream Statistics</h3>
+          <p class="flex justify-between"><span class="text-gray-400">FPS:</span> <span class="font-medium">${
+            framesPerSecond || 0
+          }</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Packet Loss:</span> <span class="font-medium">${
+            packetsLost || 0
+          }</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Jitter:</span> <span class="font-medium">${
+            jitter || 0
+          }</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Resolution:</span> <span class="font-medium">${
+            width || 0
+          } x ${height || 0}</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Latency (RTT):</span> <span class="font-medium">${
+            rtt || 0
+          } ms</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Bytes Received:</span> <span class="font-medium">${
+            (totalInboundBytes / (1024 * 1024)).toFixed(2) || 0
+          } MB</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Video Codec:</span> <span class="font-medium">${
+            videoCodec || "N/A"
+          }</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Audio Codec:</span> <span class="font-medium">${
+            audioCodec || "N/A"
+          }</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Audio Sample Rate:</span> <span class="font-medium">${
+            audioSampleRate || 0
+          }</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Bitrate:</span> <span class="font-medium">${
+            (currentBitrate / 1000).toFixed(2) || 0
+          } kbps</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Streaming:</span> <span class="font-medium">${formatTime(
+            elapsedStreamSec
+          )}</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Decode Time:</span> <span class="font-medium">${decodeTime.toFixed(
+            2
+          )} ms</span></p>
+        </div>
+      `;
     } catch (err) {
       console.error("Error fetching stats:", err);
     }
   }
 
-  setInterval(updateClientStats, 1000);
+  setInterval(updateClientStats, 300);
 
   const maxJoysticks = 4;
   const joystickMapping = {};

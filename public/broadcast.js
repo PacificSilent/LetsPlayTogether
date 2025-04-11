@@ -107,7 +107,8 @@ socket.on("watcher", (id) => {
       params.encodings = [{}];
     }
     params.encodings[0].maxBitrate = 80000000;
-    params.degradationPreference = "maintain-framerate";
+    params.degradationPreference = "balanced";
+    params.encodings[0].maxFramerate = 60;
     videoSender
       .setParameters(params)
       .then(() => {
@@ -309,6 +310,20 @@ function getStream() {
 }
 
 function getScreen() {
+  // CAMERA OBS
+  // return navigator.mediaDevices.getUserMedia({
+  //   video: {
+  //     frameRate: { ideal: 60, max: 60 },
+  //     width: { ideal: 1920, max: 1920 },
+  //     height: { ideal: 1080, max: 1080 },
+  //   },
+  //   audio: {
+  //     noiseSuppression: false,
+  //     autoGainControl: false,
+  //     echoCancellation: false,
+  //   },
+  // });
+
   return navigator.mediaDevices.getDisplayMedia({
     video: {
       frameRate: { ideal: 60, max: 60 },
