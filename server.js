@@ -13,7 +13,7 @@ function auth(req, res, next) {
       "WWW-Authenticate",
       'Basic realm="Enter username and password"'
     );
-    return res.status(401).send("Authentication required.");
+    return res.status(401).send("Acceso denegado: se requiere autenticación.");
   }
   const encoded = authHeader.split(" ")[1] || "";
   const decoded = Buffer.from(encoded, "base64").toString("utf8");
@@ -28,7 +28,7 @@ function auth(req, res, next) {
     "WWW-Authenticate",
     'Basic realm="Enter username and password"'
   );
-  return res.status(401).send("Authentication required.");
+  return res.status(401).send("Credenciales inválidas.");
 }
 
 app.get("/broadcast.html", auth, (req, res) => {
@@ -39,7 +39,7 @@ app.get("/watch.html", (req, res) => {
   if (req.cookies && req.cookies.approved === "1") {
     return res.sendFile(__dirname + "/public/watch.html");
   }
-  return res.status(403).send("Acceso denegado.");
+  return res.redirect("/access-denied.html");
 });
 
 let broadcaster;
