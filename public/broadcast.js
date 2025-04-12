@@ -106,7 +106,7 @@ socket.on("watcher", (id) => {
     if (!params.encodings) {
       params.encodings = [{}];
     }
-    params.encodings[0].maxBitrate = 80000000;
+    params.encodings[0].maxBitrate = 5000000;
     params.degradationPreference = "balanced";
     params.encodings[0].maxFramerate = 60;
     videoSender
@@ -329,6 +329,8 @@ function getScreen() {
       frameRate: { ideal: 60, max: 60 },
       width: { ideal: 1920, max: 1920 },
       height: { ideal: 1080, max: 1080 },
+      displaySurface: "monitor",
+      autoGainControl: true,
     },
     audio: {
       noiseSuppression: false,
@@ -373,8 +375,8 @@ function fallbackBroadcast() {
     .getDisplayMedia({
       video: {
         frameRate: { ideal: 60, max: 60 },
-        width: { ideal: 1280, max: 1280 },
-        height: { ideal: 720, max: 720 },
+        width: { ideal: 1920, max: 1920 },
+        height: { ideal: 1080, max: 1080 },
       },
       audio: {
         noiseSuppression: false,

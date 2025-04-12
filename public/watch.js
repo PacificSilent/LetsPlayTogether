@@ -11,6 +11,9 @@ const config = {
   ],
 };
 
+let measuredFrameRate = 0;
+let lastFrameTimestamp = null;
+
 // Se añaden opciones para reconexión automática
 const socket = io.connect(window.location.origin, {
   reconnection: true,
@@ -68,10 +71,34 @@ socket.on("offer", (id, description) => {
     .then(() => {
       socket.emit("answer", id, peerConnection.localDescription);
     });
+
+  // Se procesa el stream mediante canvas antes de asignarlo al video
   peerConnection.ontrack = (event) => {
-    video.srcObject = event.streams[0];
+    // Video fuente oculto para procesar el stream
+    const sourceVideo = document.createElement("video");
+    sourceVideo.srcObject = event.streams[0];
+    sourceVideo.play();
+
+    // Se crea el canvas para capturar el stream procesado
+    const canvas = document.createElement("canvas");
+
+    sourceVideo.addEventListener("loadedmetadata", () => {
+      canvas.width = sourceVideo.videoWidth;
+      canvas.height = sourceVideo.videoHeight;
+    });
+
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+
+    setInterval(() => {
+      ctx.drawImage(sourceVideo, 0, 0, canvas.width, canvas.height);
+    }, 1000 / 60);
+
+    const newStream = canvas.captureStream(60);
+    video.srcObject = newStream;
     modal.style.display = "none";
   };
+
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("candidate", id, event.candidate);
@@ -298,8 +325,11 @@ document.addEventListener("DOMContentLoaded", () => {
       statsOverlay.innerHTML = `
         <div class="space-y-2">
           <h3 class="font-bold text-purple-400 border-b border-purple-700 pb-1 mb-2">Stream Statistics</h3>
-          <p class="flex justify-between"><span class="text-gray-400">FPS:</span> <span class="font-medium">${
+          <p class="flex justify-between"><span class="text-gray-400">WebRTC FPS:</span> <span class="font-medium">${
             framesPerSecond || 0
+          }</span></p>
+          <p class="flex justify-between"><span class="text-gray-400">Video FPS:</span> <span class="font-medium">${
+            measuredFrameRate ? measuredFrameRate.toFixed(2) : 0
           }</span></p>
           <p class="flex justify-between"><span class="text-gray-400">Packet Loss:</span> <span class="font-medium">${
             packetsLost || 0
@@ -309,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }</span></p>
           <p class="flex justify-between"><span class="text-gray-400">Resolution:</span> <span class="font-medium">${
             width || 0
-          } x ${height || 0}</span></p>
+          } x ${height || 0}</span></p> 
           <p class="flex justify-between"><span class="text-gray-400">Latency (RTT):</span> <span class="font-medium">${
             rtt || 0
           } ms</span></p>
@@ -376,7 +406,6 @@ document.addEventListener("DOMContentLoaded", () => {
               axes: newData.axes,
               buttons: newData.buttons,
             };
-            console.log("Joystick data:", data);
 
             socket.emit("joystick-data", data);
           }
@@ -433,4 +462,25 @@ document.getElementById("show-gamepad").addEventListener("click", () => {
     gamepadContainer.style.pointerEvents = "auto";
     document.getElementById("options-panel").classList.add("hidden");
   }
+});
+
+function measureFrameRate() {
+  if ("requestVideoFrameCallback" in video) {
+    video.requestVideoFrameCallback((now, metadata) => {
+      if (lastFrameTimestamp) {
+        const delta = now - lastFrameTimestamp; // tiempo en ms entre frames
+        measuredFrameRate = 1000 / delta;
+      }
+      lastFrameTimestamp = now;
+      measureFrameRate();
+    });
+  } else {
+    console.warn(
+      "requestVideoFrameCallback no está soportado en este navegador."
+    );
+  }
+}
+
+video.addEventListener("playing", () => {
+  measureFrameRate();
 });
