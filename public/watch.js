@@ -1,3 +1,6 @@
+// -------------------------
+// Configuración y variables globales
+// -------------------------
 let peerConnection;
 const config = {
   iceServers: [
@@ -14,7 +17,12 @@ const config = {
 let measuredFrameRate = 0;
 let lastFrameTimestamp = null;
 
-// Se añaden opciones para reconexión automática
+const video = document.getElementById("video");
+const modal = document.getElementById("modal");
+
+// -------------------------
+// Conexión de Socket.IO y manejo de eventos
+// -------------------------
 const socket = io.connect(window.location.origin, {
   reconnection: true,
   reconnectionAttempts: Infinity,
@@ -29,13 +37,10 @@ socket.on("disconnect", (reason) => {
   console.log("Disconnected from server:", reason);
 });
 
-const video = document.getElementById("video");
-const modal = document.getElementById("modal");
-
 socket.on("offer", (id, description) => {
   peerConnection = new RTCPeerConnection(config);
 
-  // Log adicional para el ciclo de vida de la conexión WebRTC
+  // Monitorizamos el ciclo de vida de la conexión
   peerConnection.onconnectionstatechange = () => {
     console.log(
       "WebRTC connection state changed to:",
@@ -48,7 +53,6 @@ socket.on("offer", (id, description) => {
       console.warn(
         `WebRTC connection ${peerConnection.connectionState}. Se ha detectado fallo en la sesión. Reintentando conexión...`
       );
-      // Se pueden agregar logs adicionales aquí, por ejemplo, capturar el estado ICE
       console.log("ICE connection state:", peerConnection.iceConnectionState);
       peerConnection.close();
       peerConnection = null;
@@ -56,7 +60,6 @@ socket.on("offer", (id, description) => {
     }
   };
 
-  // Además, agrega un listener para cambios en el estado ICE que puede ofrecer más detalles:
   peerConnection.oniceconnectionstatechange = () => {
     console.log(
       "ICE connection state changed to:",
@@ -64,6 +67,7 @@ socket.on("offer", (id, description) => {
     );
   };
 
+  // Configuración de SDP y envío de respuesta
   peerConnection
     .setRemoteDescription(description)
     .then(() => peerConnection.createAnswer())
@@ -72,7 +76,7 @@ socket.on("offer", (id, description) => {
       socket.emit("answer", id, peerConnection.localDescription);
     });
 
-  // Se procesa el stream mediante canvas antes de asignarlo al video
+  // Manejo del stream
   peerConnection.ontrack = (event) => {
     video.srcObject = event.streams[0];
     modal.style.display = "none";
@@ -128,12 +132,10 @@ socket.on("disconnectPeer", (peerId) => {
 
 function clearApprovalAndClose() {
   document.cookie = "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
-
   const gamepadContainer = document.getElementById("virtual-gamepad-container");
   if (gamepadContainer) {
     gamepadContainer.style.display = "none";
   }
-
   if (socket && socket.connected) {
     socket.close();
   }
@@ -141,7 +143,6 @@ function clearApprovalAndClose() {
     peerConnection.close();
     peerConnection = null;
   }
-
   setTimeout(() => {
     window.location.href = "/";
   }, 1500);
@@ -151,6 +152,9 @@ window.addEventListener("beforeunload", clearApprovalAndClose);
 window.addEventListener("unload", clearApprovalAndClose);
 window.addEventListener("pagehide", clearApprovalAndClose);
 
+// -------------------------
+// Estadísticas del cliente y Gamepad (Código de ejemplo)
+// -------------------------
 document.addEventListener("DOMContentLoaded", () => {
   const optionsPanel = document.getElementById("options-panel");
   const videoElem = document.getElementById("video");
@@ -178,21 +182,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(statsOverlay);
   }
 
-  document.addEventListener("click", (e) => {
-    if (!optionsPanel.contains(e.target)) {
-      const gamepadContainer = document.getElementById(
-        "virtual-gamepad-container"
-      );
-      const isGamepadHidden =
-        !gamepadContainer ||
-        gamepadContainer.style.display === "none" ||
-        gamepadContainer.style.display === "";
-      if (isGamepadHidden && video.srcObject) {
-        optionsPanel.classList.toggle("hidden");
-      }
-    }
-  });
-
   if (unmuteBtn) {
     unmuteBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -201,7 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const iconElem = unmuteBtn.querySelector("i");
       if (spanText) {
         spanText.textContent = videoElem.muted ? "Unmute" : "Mute";
-        // Cambiar el icono también
         if (iconElem) {
           iconElem.className = videoElem.muted
             ? "fa-solid fa-volume-high"
@@ -297,8 +285,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const elapsedStreamSec = joinStats.start
         ? Math.floor((Date.now() - joinStats.start) / 1000)
         : 0;
-
-      // Calcular decodeTime antes de usarlo en el template
       const decodeTime = performance.now() - decodeStart;
 
       statsOverlay.innerHTML = `
@@ -318,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }</span></p>
           <p class="flex justify-between"><span class="text-gray-400">Resolution:</span> <span class="font-medium">${
             width || 0
-          } x ${height || 0}</span></p> 
+          } x ${height || 0}</span></p>
           <p class="flex justify-between"><span class="text-gray-400">Latency (RTT):</span> <span class="font-medium">${
             rtt || 0
           } ms</span></p>
@@ -352,15 +338,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setInterval(updateClientStats, 300);
 
+  // Gamepad polling (si aplica)
   const maxJoysticks = 4;
   const joystickMapping = {};
   const prevValues = {};
+
   function pollGamepads() {
     if (!video.srcObject || !peerConnection) {
       requestAnimationFrame(pollGamepads);
       return;
     }
-
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
     for (let gp of gamepads) {
       if (gp && socket.id) {
@@ -385,7 +372,6 @@ document.addEventListener("DOMContentLoaded", () => {
               axes: newData.axes,
               buttons: newData.buttons,
             };
-
             socket.emit("joystick-data", data);
           }
         }
@@ -396,6 +382,9 @@ document.addEventListener("DOMContentLoaded", () => {
   pollGamepads();
 });
 
+// -------------------------
+// Botones adicionales y Fullscreen/Exit Stream
+// -------------------------
 document.addEventListener("DOMContentLoaded", () => {
   const fullscreenBtn = document.getElementById("toggle-fullscreen");
   if (fullscreenBtn) {
@@ -409,15 +398,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-});
 
-document.addEventListener("DOMContentLoaded", () => {
   const exitBtn = document.getElementById("exit-streaming");
   if (exitBtn) {
     exitBtn.addEventListener("click", async () => {
       document.cookie =
         "streamingEntry=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
       if (document.fullscreenElement) {
         try {
           await document.exitFullscreen();
@@ -428,26 +414,51 @@ document.addEventListener("DOMContentLoaded", () => {
       window.history.back();
     });
   }
+
+  document.getElementById("show-gamepad").addEventListener("click", () => {
+    const gamepadContainer = document.getElementById(
+      "virtual-gamepad-container"
+    );
+    const optionsPanel = document.getElementById("options-panel");
+    const qualitySelectorContainer = document.getElementById(
+      "qualitySelectorContainer"
+    );
+
+    if (gamepadContainer) {
+      // Si el gamepad NO está visible, se muestra y se ocultan los paneles
+      if (
+        gamepadContainer.style.display === "none" ||
+        gamepadContainer.style.display === ""
+      ) {
+        gamepadContainer.style.display = "block";
+        gamepadContainer.style.pointerEvents = "auto";
+        if (optionsPanel) {
+          optionsPanel.classList.add("hidden");
+        }
+        if (qualitySelectorContainer) {
+          qualitySelectorContainer.style.display = "none";
+        }
+      } else {
+        // Si el gamepad está visible y se hace clic, se oculta y se asegura que
+        // el panel de opciones no se muestre
+        gamepadContainer.style.display = "none";
+        gamepadContainer.style.pointerEvents = "none";
+        if (optionsPanel) {
+          optionsPanel.classList.add("hidden");
+        }
+      }
+    }
+  });
 });
 
-document.getElementById("show-gamepad").addEventListener("click", () => {
-  const gamepadContainer = document.getElementById("virtual-gamepad-container");
-  if (
-    gamepadContainer &&
-    (gamepadContainer.style.display === "none" ||
-      gamepadContainer.style.display === "")
-  ) {
-    gamepadContainer.style.display = "block";
-    gamepadContainer.style.pointerEvents = "auto";
-    document.getElementById("options-panel").classList.add("hidden");
-  }
-});
-
+// -------------------------
+// Medición de FPS del video
+// -------------------------
 function measureFrameRate() {
   if ("requestVideoFrameCallback" in video) {
     video.requestVideoFrameCallback((now, metadata) => {
       if (lastFrameTimestamp) {
-        const delta = now - lastFrameTimestamp; // tiempo en ms entre frames
+        const delta = now - lastFrameTimestamp;
         measuredFrameRate = 1000 / delta;
       }
       lastFrameTimestamp = now;
@@ -462,4 +473,150 @@ function measureFrameRate() {
 
 video.addEventListener("playing", () => {
   measureFrameRate();
+});
+
+// -------------------------
+// Panel de Calidad de Stream y Toggling con Botón de Opciones
+// -------------------------
+document.addEventListener("DOMContentLoaded", () => {
+  // Crear el panel de Calidad de Stream
+  const qualitySelectorContainer = document.createElement("div");
+  qualitySelectorContainer.id = "qualitySelectorContainer";
+  qualitySelectorContainer.className =
+    "fixed bottom-3 right-3 z-50 bg-gray-900 border border-purple-700 rounded-lg shadow-lg p-2 max-w-xs";
+
+  // Header del panel
+  const header = document.createElement("div");
+  header.className = "flex items-center gap-1.5 mb-2";
+  header.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+    </svg>
+    <span class="text-sm font-bold text-primary">Calidad de Stream</span>
+  `;
+  qualitySelectorContainer.appendChild(header);
+
+  // Wrapper para el select
+  const selectWrapper = document.createElement("div");
+  selectWrapper.className = "relative";
+
+  // Crear el select de calidad
+  const qualitySelector = document.createElement("select");
+  qualitySelector.id = "qualitySelector";
+  qualitySelector.className =
+    "w-full bg-gray-800 text-white border border-purple-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition appearance-none";
+  qualitySelector.innerHTML = `
+    <option value="high">1080p/60 - Alta</option>
+    <option value="medium">1080p/30 - Media</option>
+    <option value="low">720p/60 - Baja</option>
+    <option value="ultralow">720p/30 - Mínima</option>
+  `;
+
+  // Flecha de dropdown
+  const dropdownArrow = document.createElement("div");
+  dropdownArrow.className =
+    "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary";
+  dropdownArrow.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z" clip-rule="evenodd" />
+    </svg>
+  `;
+
+  selectWrapper.appendChild(qualitySelector);
+  selectWrapper.appendChild(dropdownArrow);
+  qualitySelectorContainer.appendChild(selectWrapper);
+
+  // Agregar el panel a la página y ocultarlo inicialmente
+  document.body.appendChild(qualitySelectorContainer);
+  qualitySelectorContainer.style.display = "none";
+
+  // Evento "change" del select de calidad
+  qualitySelector.addEventListener("change", (e) => {
+    const quality = e.target.value;
+    showQualityToast(quality);
+    socket.emit("selectQuality", { peerId: socket.id, quality });
+    console.log("Calidad seleccionada:", quality);
+    qualitySelectorContainer.style.display = "none";
+    const optionsPanel = document.getElementById("options-panel");
+    if (optionsPanel) {
+      optionsPanel.classList.add("hidden");
+    }
+  });
+
+  // Función para mostrar el toast de calidad
+  function showQualityToast(quality) {
+    let toastContainer = document.getElementById("quality-toast");
+    if (!toastContainer) {
+      toastContainer = document.createElement("div");
+      toastContainer.id = "quality-toast";
+      toastContainer.className =
+        "fixed top-4 right-4 z-50 transform transition-all duration-500 translate-x-full";
+      document.body.appendChild(toastContainer);
+    }
+    const qualityLabels = {
+      high: "Alta (1080p/60)",
+      medium: "Media (1080p/30)",
+      low: "Baja (720p/60)",
+      ultralow: "Mínima (720p/30)",
+    };
+    const toast = document.createElement("div");
+    toast.className =
+      "bg-gray-900 border border-purple-700 rounded-lg shadow-lg p-3 mb-3 flex items-center";
+    toast.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      <div>
+        <p class="text-white text-sm font-medium">Calidad cambiada</p>
+        <p class="text-gray-300 text-xs">${qualityLabels[quality]}</p>
+      </div>
+    `;
+    toastContainer.appendChild(toast);
+    setTimeout(() => {
+      toastContainer.classList.remove("translate-x-full");
+      toastContainer.classList.add("translate-x-0");
+    }, 10);
+    setTimeout(() => {
+      toast.classList.add("opacity-0");
+      setTimeout(() => {
+        toast.remove();
+        if (toastContainer.children.length === 0) {
+          toastContainer.classList.add("translate-x-full");
+          toastContainer.classList.remove("translate-x-0");
+        }
+      }, 300);
+    }, 3000);
+  }
+});
+
+// -------------------------
+// Toggling de Panel de Opciones y de Calidad mediante Botón de Opciones
+// -------------------------
+document.addEventListener("DOMContentLoaded", () => {
+  const optionsPanel = document.getElementById("options-panel");
+  const btnOptions = document.getElementById("btn-options");
+  const qualitySelectorContainer = document.getElementById(
+    "qualitySelectorContainer"
+  );
+
+  // Asegurarse de que ambos paneles estén ocultos inicialmente
+  if (optionsPanel) {
+    optionsPanel.classList.add("hidden");
+  }
+  if (qualitySelectorContainer) {
+    qualitySelectorContainer.style.display = "none";
+  }
+
+  btnOptions.addEventListener("click", (e) => {
+    // Si el panel de opciones está oculto, lo mostramos y también el panel de calidad.
+    // Si está visible, se ocultan ambos.
+    if (optionsPanel.classList.contains("hidden")) {
+      optionsPanel.classList.remove("hidden");
+      qualitySelectorContainer.style.display = "block";
+    } else {
+      optionsPanel.classList.add("hidden");
+      qualitySelectorContainer.style.display = "none";
+    }
+    e.stopPropagation();
+  });
 });

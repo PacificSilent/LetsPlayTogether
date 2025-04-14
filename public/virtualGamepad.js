@@ -106,7 +106,7 @@
   hideGamepadBtn.addEventListener("click", () => {
     container.style.display = "none";
     // Volver a mostrar el panel de opciones
-    document.getElementById("options-panel").classList.remove("hidden");
+    document.getElementById("options-panel").classList.add("hidden");
   });
   container.appendChild(hideGamepadBtn);
 

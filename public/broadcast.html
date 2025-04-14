@@ -302,6 +302,7 @@
               Share link
             </h2>
           </div>
+
           <div class="p-4 max-h-[300px] overflow-y-auto">
             <p class="text-gray-300 text-center">
               Share this link with your friends to join the broadcast:
@@ -319,6 +320,144 @@
               >
                 Copy
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Updated Voice Chat Section -->
+        <!-- Enhanced Voice Chat Section -->
+        <div
+          class="bg-gray-900 border-2 border-purple-700 rounded-lg shadow-xl overflow-hidden"
+        >
+          <!-- Header with improved styling -->
+          <div class="p-4 bg-gray-800 border-b border-purple-800 relative">
+            <!-- Title with icon -->
+            <div class="relative z-10 flex items-center justify-between">
+              <h2
+                class="text-xl font-bold text-primary flex items-center gap-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                  />
+                </svg>
+                Voice Chat
+              </h2>
+            </div>
+          </div>
+
+          <!-- Microphone selection with improved styling -->
+          <div class="p-5">
+            <label
+              for="voiceMic"
+              class="block text-sm font-medium mb-2 flex items-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 mr-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                />
+              </svg>
+              Select Your Microphone
+            </label>
+
+            <!-- Custom styled select dropdown -->
+            <div class="relative mb-4">
+              <select
+                id="voiceMic"
+                class="w-full bg-gray-800 text-white border border-purple-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary transition appearance-none"
+              ></select>
+              <!-- Custom dropdown arrow -->
+              <div
+                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Join button with improved styling -->
+          <div class="px-5 pb-3">
+            <button
+              id="voiceToggleBtn"
+              class="w-full bg-primary hover:bg-accent text-white px-4 py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                />
+              </svg>
+              Join Voice Chat
+            </button>
+          </div>
+
+          <!-- Users list with improved styling -->
+          <div id="voiceUserListContainer" class="px-5 pb-5 hidden">
+            <div class="p-4 bg-gray-800 border border-purple-800 rounded-lg">
+              <h3
+                class="text-lg font-bold text-secondary mb-3 flex items-center"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                Players in Voice Chat
+              </h3>
+
+              <!-- User list -->
+              <ul
+                id="voiceUserList"
+                class="space-y-2 max-h-48 overflow-y-auto pr-1"
+              >
+                <!-- List items will be populated by JavaScript -->
+              </ul>
             </div>
           </div>
         </div>
@@ -540,5 +679,6 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/broadcast.js"></script>
+    <script src="/voiceChat.js"></script>
   </body>
 </html>

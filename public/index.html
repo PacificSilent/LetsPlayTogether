@@ -354,6 +354,8 @@
       socket.on("peerApproval", (data) => {
         waitingModal.classList.add("hidden");
         if (data.approved) {
+          localStorage.setItem("userNick", nicknameInput.value.trim());
+          // Se establece la cookie aprobada y se redirige a watch.html
           document.cookie = "approved=1; path=/";
           window.location.href = "/watch.html";
         } else {

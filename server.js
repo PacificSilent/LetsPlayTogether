@@ -53,6 +53,9 @@ const io = require("socket.io")(server);
 app.use(express.static(__dirname + "/public"));
 
 io.sockets.on("error", (e) => console.log(e));
+
+const voiceUsers = {};
+
 io.sockets.on("connection", (socket) => {
   socket.on("broadcaster", () => {
     broadcaster = socket.id;
@@ -101,6 +104,64 @@ io.sockets.on("connection", (socket) => {
 
   socket.on("handlePeerRequest", (data) => {
     io.to(data.peerId).emit("peerApproval", { approved: data.approved });
+  });
+
+  // Manejo del chat de voz
+  socket.on("voice-join", (data) => {
+    // data contiene { nick }
+    voiceUsers[socket.id] = { nick: data.nick };
+    socket.join("voiceChat");
+    // Notificar a todos los conectados en voz la lista actualizada
+    io.to("voiceChat").emit(
+      "voice-user-list",
+      Object.keys(voiceUsers).map((id) => ({
+        id,
+        nick: voiceUsers[id].nick,
+      }))
+    );
+  });
+
+  socket.on("voice-leave", () => {
+    delete voiceUsers[socket.id];
+    socket.leave("voiceChat");
+    io.to("voiceChat").emit(
+      "voice-user-list",
+      Object.keys(voiceUsers).map((id) => ({
+        id,
+        nick: voiceUsers[id].nick,
+      }))
+    );
+  });
+
+  socket.on("voice-offer", (targetId, offer) => {
+    socket.to(targetId).emit("voice-offer", socket.id, offer);
+  });
+
+  socket.on("voice-answer", (targetId, answer) => {
+    socket.to(targetId).emit("voice-answer", socket.id, answer);
+  });
+
+  socket.on("voice-candidate", (targetId, candidate) => {
+    socket.to(targetId).emit("voice-candidate", socket.id, candidate);
+  });
+
+  socket.on("selectQuality", (data) => {
+    // Reenviar la selección de calidad desde el cliente al broadcaster
+    io.to(broadcaster).emit("selectQuality", data);
+  });
+
+  // Al desconectar, removemos de la lista de voz si aplica.
+  socket.on("disconnect", () => {
+    if (voiceUsers[socket.id]) {
+      delete voiceUsers[socket.id];
+      io.to("voiceChat").emit(
+        "voice-user-list",
+        Object.keys(voiceUsers).map((id) => ({
+          id,
+          nick: voiceUsers[id].nick,
+        }))
+      );
+    }
   });
 });
 
