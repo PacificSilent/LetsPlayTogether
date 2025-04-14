@@ -419,14 +419,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const gamepadContainer = document.getElementById(
       "virtual-gamepad-container"
     );
-    if (
-      gamepadContainer &&
-      (gamepadContainer.style.display === "none" ||
-        gamepadContainer.style.display === "")
-    ) {
-      gamepadContainer.style.display = "block";
-      gamepadContainer.style.pointerEvents = "auto";
-      document.getElementById("options-panel").classList.add("hidden");
+    const optionsPanel = document.getElementById("options-panel");
+    const qualitySelectorContainer = document.getElementById(
+      "qualitySelectorContainer"
+    );
+
+    if (gamepadContainer) {
+      // Si el gamepad NO está visible, se muestra y se ocultan los paneles
+      if (
+        gamepadContainer.style.display === "none" ||
+        gamepadContainer.style.display === ""
+      ) {
+        gamepadContainer.style.display = "block";
+        gamepadContainer.style.pointerEvents = "auto";
+        if (optionsPanel) {
+          optionsPanel.classList.add("hidden");
+        }
+        if (qualitySelectorContainer) {
+          qualitySelectorContainer.style.display = "none";
+        }
+      } else {
+        // Si el gamepad está visible y se hace clic, se oculta y se asegura que
+        // el panel de opciones no se muestre
+        gamepadContainer.style.display = "none";
+        gamepadContainer.style.pointerEvents = "none";
+        if (optionsPanel) {
+          optionsPanel.classList.add("hidden");
+        }
+      }
     }
   });
 });
@@ -498,7 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary";
   dropdownArrow.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z" clip-rule="evenodd" />
     </svg>
   `;
 
@@ -575,21 +595,28 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", () => {
   const optionsPanel = document.getElementById("options-panel");
   const btnOptions = document.getElementById("btn-options");
-  if (btnOptions && optionsPanel) {
-    btnOptions.addEventListener("click", (e) => {
-      optionsPanel.classList.toggle("hidden");
-      // Toggle también la visibilidad del panel de Calidad de Stream
-      const qualitySelectorContainer = document.getElementById(
-        "qualitySelectorContainer"
-      );
-      if (qualitySelectorContainer) {
-        if (qualitySelectorContainer.style.display === "none") {
-          qualitySelectorContainer.style.display = "block";
-        } else {
-          qualitySelectorContainer.style.display = "none";
-        }
-      }
-      e.stopPropagation();
-    });
+  const qualitySelectorContainer = document.getElementById(
+    "qualitySelectorContainer"
+  );
+
+  // Asegurarse de que ambos paneles estén ocultos inicialmente
+  if (optionsPanel) {
+    optionsPanel.classList.add("hidden");
   }
+  if (qualitySelectorContainer) {
+    qualitySelectorContainer.style.display = "none";
+  }
+
+  btnOptions.addEventListener("click", (e) => {
+    // Si el panel de opciones está oculto, lo mostramos y también el panel de calidad.
+    // Si está visible, se ocultan ambos.
+    if (optionsPanel.classList.contains("hidden")) {
+      optionsPanel.classList.remove("hidden");
+      qualitySelectorContainer.style.display = "block";
+    } else {
+      optionsPanel.classList.add("hidden");
+      qualitySelectorContainer.style.display = "none";
+    }
+    e.stopPropagation();
+  });
 });
