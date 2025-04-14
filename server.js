@@ -145,6 +145,11 @@ io.sockets.on("connection", (socket) => {
     socket.to(targetId).emit("voice-candidate", socket.id, candidate);
   });
 
+  socket.on("selectQuality", (data) => {
+    // Reenviar la selección de calidad desde el cliente al broadcaster
+    io.to(broadcaster).emit("selectQuality", data);
+  });
+
   // Al desconectar, removemos de la lista de voz si aplica.
   socket.on("disconnect", () => {
     if (voiceUsers[socket.id]) {

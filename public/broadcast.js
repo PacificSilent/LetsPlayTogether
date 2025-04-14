@@ -841,3 +841,41 @@ changeBtn.addEventListener("click", async () => {
     }
   }
 });
+
+socket.on("selectQuality", ({ peerId, quality }) => {
+  const qualityConfig = {
+    ultralow: {
+      maxBitrate: 3000000,
+      maxFramerate: 30,
+      scaleResolutionDownBy: 2,
+    },
+    low: { maxBitrate: 5000000, maxFramerate: 60, scaleResolutionDownBy: 2 },
+    medium: {
+      maxBitrate: 8000000,
+      maxFramerate: 30,
+      scaleResolutionDownBy: 1.5,
+    },
+    high: { maxBitrate: 20000000, maxFramerate: 60, scaleResolutionDownBy: 1 },
+  };
+
+  const videoSender = videoSenders[peerId];
+  if (videoSender) {
+    videoSenders[peerId] = videoSender;
+    const params = videoSender.getParameters();
+    if (!params.encodings) {
+      params.encodings = [{}];
+    }
+    params.encodings[0].maxBitrate = qualityConfig[quality].maxBitrate;
+    params.degradationPreference = "balanced";
+    params.encodings[0].maxFramerate = qualityConfig[quality].maxFramerate;
+    params.scaleResolutionDownBy = qualityConfig[quality].scaleResolutionDownBy;
+    videoSender
+      .setParameters(params)
+      .then(() => {
+        console.log("Encoding parameters updated for peer", peerId);
+      })
+      .catch((err) => {
+        console.error("Error updating parameters:", err);
+      });
+  }
+});
