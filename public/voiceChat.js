@@ -3,10 +3,9 @@ let localVoiceStream = null;
 const voicePeerConnections = {};
 const voiceConfig = {
   iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:pacificsilent.localto.net:1546" },
+    { urls: "stun:pacificsilent.localto.net:3857" },
     {
-      urls: "turn:pacificsilent.localto.net:1546?transport=tcp",
+      urls: "turn:pacificsilent.localto.net:3857",
       username: "test",
       credential: "test",
     },
@@ -16,22 +15,101 @@ const voiceConfig = {
 let isVoiceJoined = false;
 let localNick = ""; // Variable para almacenar el nickname
 
+// Nueva función para poblar los dispositivos de audio para el chat de voz
+async function populateVoiceAudioDevices() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const audioInputs = devices.filter(
+      (device) => device.kind === "audioinput"
+    );
+    const micSelect = document.getElementById("voiceMic");
+    if (!micSelect) return; // Si no se encuentra el selector, no se hace nada
+
+    micSelect.innerHTML = "<option value=''>Default Microphone</option>";
+    audioInputs.forEach((device, index) => {
+      const option = document.createElement("option");
+      option.value = device.deviceId;
+      option.text = device.label || `Microphone ${index + 1}`;
+      micSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error populating voice audio devices:", error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  populateVoiceAudioDevices();
+
+  // Inicializar elementos UI
+  const emptyVoiceState = document.getElementById("empty-voice-state");
+  const voiceUserList = document.getElementById("voiceUserList");
+
+  // Si existe el elemento empty-voice-state, mostrarlo inicialmente
+  if (emptyVoiceState && voiceUserList) {
+    emptyVoiceState.classList.remove("hidden");
+    voiceUserList.classList.add("hidden");
+  }
+});
+
 // Función para unirse al canal de voz
 async function joinVoiceChat(nick) {
   if (isVoiceJoined) return;
   localNick = nick; // Almacenar el nickname
+
   try {
-    localVoiceStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        noiseSuppression: true,
-        echoCancellation: true,
-      },
-    });
+    const micSelect = document.getElementById("voiceMic");
+    const audioConstraints = {
+      noiseSuppression: true,
+      echoCancellation: true,
+      ...(micSelect && micSelect.value
+        ? { deviceId: { exact: micSelect.value } }
+        : {}),
+    };
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      localVoiceStream = await navigator.mediaDevices.getUserMedia({
+        audio: audioConstraints,
+      });
+    } else {
+      throw new Error("getUserMedia is not supported in this browser");
+    }
+
+    const voiceChatPanel = document.getElementById("voiceChatPanel");
+    if (voiceChatPanel) {
+      voiceChatPanel.classList.remove("hidden");
+    }
+
+    const voiceUserListContainer = document.getElementById(
+      "voiceUserListContainer"
+    );
+    if (voiceUserListContainer) {
+      voiceUserListContainer.classList.remove("hidden");
+    }
     // Enviar el evento de unión con el nickname
     voiceSocket.emit("voice-join", { nick });
     isVoiceJoined = true;
-    document.getElementById("voiceToggleBtn").textContent =
-      "Salir del Chat de Voz";
+
+    // Actualizar UI
+    const voiceToggleBtn = document.getElementById("voiceToggleBtn");
+    if (voiceToggleBtn) {
+      voiceToggleBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        Leave Voice Chat
+      `;
+      voiceToggleBtn.classList.remove("bg-primary", "hover:bg-accent");
+      voiceToggleBtn.classList.add("bg-red-600", "hover:bg-red-700");
+    }
+
+    // Actualizar indicador de estado
+    const voiceStatus = document.getElementById("voice-status");
+    if (voiceStatus) {
+      voiceStatus.textContent = "Conectado";
+      voiceStatus.classList.remove("bg-gray-700", "text-gray-400");
+      voiceStatus.classList.add("bg-green-700", "text-green-100");
+    }
+
     // (Opcional) reproducir localmente el audio en modo mudo
     let localAudio = document.createElement("audio");
     localAudio.srcObject = localVoiceStream;
@@ -45,19 +123,47 @@ async function joinVoiceChat(nick) {
 // Función para salir del canal de voz
 function leaveVoiceChat() {
   if (!isVoiceJoined) return;
+
   if (localVoiceStream) {
     localVoiceStream.getTracks().forEach((track) => track.stop());
     localVoiceStream = null;
   }
+
+  const voiceChatPanel = document.getElementById("voiceChatPanel");
+  if (voiceChatPanel) {
+    voiceChatPanel.classList.add("hidden");
+  }
+
+  const voiceUserListContainer = document.getElementById(
+    "voiceUserListContainer"
+  );
+  if (voiceUserListContainer) {
+    voiceUserListContainer.classList.add("hidden");
+  }
   voiceSocket.emit("voice-leave");
+
   // Cerrar conexiones peer de voz
   Object.keys(voicePeerConnections).forEach((peerId) => {
     voicePeerConnections[peerId].close();
     delete voicePeerConnections[peerId];
   });
+
   isVoiceJoined = false;
-  document.getElementById("voiceToggleBtn").textContent =
-    "Unirse al Chat de Voz";
+
+  // Actualizar UI
+  const voiceToggleBtn = document.getElementById("voiceToggleBtn");
+  if (voiceToggleBtn) {
+    voiceToggleBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+      </svg>
+      Join Voice Chat
+    `;
+    voiceToggleBtn.classList.remove("bg-red-600", "hover:bg-red-700");
+    voiceToggleBtn.classList.add("bg-primary", "hover:bg-accent");
+  }
+
+  // Mostrar estado vacío
   updateVoiceUserList([]);
 }
 
@@ -75,11 +181,51 @@ document.getElementById("voiceToggleBtn")?.addEventListener("click", () => {
 // Actualiza el contenedor de lista de usuarios conectados
 function updateVoiceUserList(users) {
   const listContainer = document.getElementById("voiceUserList");
+
   if (!listContainer) return;
+
+  if (users.length === 0) {
+    listContainer.classList.add("hidden");
+    listContainer.innerHTML = "";
+    return;
+  }
+
+  listContainer.classList.remove("hidden");
+
+  // Limpiar y actualizar lista
   listContainer.innerHTML = "";
+
   users.forEach((user) => {
     const li = document.createElement("li");
-    li.textContent = user.nick;
+    li.className =
+      "flex items-center justify-between bg-gray-700 p-2 rounded-lg border-l-4 border-primary";
+
+    // Crear avatar e información del usuario
+    const userInfo = document.createElement("div");
+    userInfo.className = "flex items-center";
+
+    const avatar = document.createElement("div");
+    avatar.className =
+      "w-8 h-8 rounded-full bg-purple-800 flex items-center justify-center text-white font-bold mr-2";
+    avatar.textContent = user.nick.charAt(0).toUpperCase();
+
+    const userName = document.createElement("span");
+    userName.textContent = user.nick;
+
+    userInfo.appendChild(avatar);
+    userInfo.appendChild(userName);
+
+    // Si es el usuario local, añadir indicador "Tú"
+    if (user.id === voiceSocket.id) {
+      const youBadge = document.createElement("span");
+      youBadge.className =
+        "ml-2 text-xs bg-purple-700 text-white px-1 py-0.5 rounded";
+      youBadge.textContent = "You";
+      userName.appendChild(youBadge);
+    }
+
+    li.appendChild(userInfo);
+
     listContainer.appendChild(li);
   });
 }

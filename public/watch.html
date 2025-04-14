@@ -120,6 +120,14 @@
         <i class="fa-solid fa-gamepad"></i>
         <span>Show Gamepad</span>
       </button>
+      <!-- Botón para Chat de Voz -->
+      <button
+        id="voiceToggleBtn"
+        class="w-full bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
+      >
+        <i class="fa-solid fa-microphone"></i>
+        <span>Join voice chat</span>
+      </button>
       <!-- Button to Exit Streaming (red with white text) -->
       <button
         id="exit-streaming"
@@ -128,21 +136,40 @@
         <i class="fa-solid fa-door-open"></i>
         <span>Exit Streaming</span>
       </button>
-      <!-- Botón para Chat de Voz -->
-      <button
-        id="voiceToggleBtn"
-        class="w-full bg-accent px-2 py-1 rounded text-sm flex items-center space-x-1 hover:bg-accent/90 transition"
-      >
-        Unirse al Chat de Voz
-      </button>
     </div>
 
     <!-- Panel de chat de voz: lista de usuarios conectados -->
     <div
-      class="fixed bottom-2 left-2 bg-gray-800 bg-opacity-70 p-4 rounded-lg text-white max-w-xs"
+      id="voiceChatPanel"
+      class="fixed bottom-2 left-2 bg-gray-900 border border-purple-700 rounded-lg shadow-md text-white max-w-[220px] z-30 hidden"
     >
-      <h2 class="text-lg font-bold mb-2">Chat de Voz</h2>
-      <ul id="voiceUserList" class="space-y-1"></ul>
+      <!-- Header with improved styling -->
+      <div
+        class="p-2 bg-gray-800 border-b border-purple-800 rounded-lg flex items-center justify-between"
+      >
+        <h2 class="text-sm font-bold text-primary flex items-center gap-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+            />
+          </svg>
+          Voice chat
+        </h2>
+      </div>
+
+      <!-- User list -->
+      <ul id="voiceUserList" class="p-2 space-y-1 max-h-32 overflow-y-auto">
+        <!-- List items will be populated by JavaScript -->
+      </ul>
     </div>
 
     <!-- Media query para ocultar el botón de pantalla completa en dispositivos móviles -->
