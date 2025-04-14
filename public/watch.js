@@ -74,28 +74,7 @@ socket.on("offer", (id, description) => {
 
   // Se procesa el stream mediante canvas antes de asignarlo al video
   peerConnection.ontrack = (event) => {
-    // Video fuente oculto para procesar el stream
-    const sourceVideo = document.createElement("video");
-    sourceVideo.srcObject = event.streams[0];
-    sourceVideo.play();
-
-    // Se crea el canvas para capturar el stream procesado
-    const canvas = document.createElement("canvas");
-
-    sourceVideo.addEventListener("loadedmetadata", () => {
-      canvas.width = sourceVideo.videoWidth;
-      canvas.height = sourceVideo.videoHeight;
-    });
-
-    const ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = true;
-
-    setInterval(() => {
-      ctx.drawImage(sourceVideo, 0, 0, canvas.width, canvas.height);
-    }, 1000 / 60);
-
-    const newStream = canvas.captureStream(60);
-    video.srcObject = newStream;
+    video.srcObject = event.streams[0];
     modal.style.display = "none";
   };
 

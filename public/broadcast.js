@@ -106,7 +106,7 @@ socket.on("watcher", (id) => {
     if (!params.encodings) {
       params.encodings = [{}];
     }
-    params.encodings[0].maxBitrate = 5000000;
+    params.encodings[0].maxBitrate = 12000000; // 50 Mbps
     params.degradationPreference = "balanced";
     params.encodings[0].maxFramerate = 60;
     videoSender
@@ -310,35 +310,44 @@ function getStream() {
 }
 
 function getScreen() {
-  // CAMERA OBS
-  // return navigator.mediaDevices.getUserMedia({
-  //   video: {
-  //     frameRate: { ideal: 60, max: 60 },
-  //     width: { ideal: 1920, max: 1920 },
-  //     height: { ideal: 1080, max: 1080 },
-  //   },
-  //   audio: {
-  //     noiseSuppression: false,
-  //     autoGainControl: false,
-  //     echoCancellation: false,
-  //   },
-  // });
-
-  return navigator.mediaDevices.getDisplayMedia({
+  const audioSource = document.getElementById("audioSource").value;
+  return navigator.mediaDevices.getUserMedia({
     video: {
       frameRate: { ideal: 60, max: 60 },
       width: { ideal: 1920, max: 1920 },
       height: { ideal: 1080, max: 1080 },
-      displaySurface: "monitor",
-      autoGainControl: true,
     },
     audio: {
+      ...(audioSource ? { deviceId: { exact: audioSource } } : {}),
       noiseSuppression: false,
       autoGainControl: false,
       echoCancellation: false,
     },
   });
 }
+
+async function populateAudioDevices() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const audioInputs = devices.filter(
+      (device) => device.kind === "audioinput"
+    );
+    const audioSelect = document.getElementById("audioSource");
+    // Reinicia opciones
+    audioSelect.innerHTML = '<option value="">Default</option>';
+    audioInputs.forEach((device, index) => {
+      const option = document.createElement("option");
+      option.value = device.deviceId;
+      option.text = device.label || `Micrófono ${index + 1}`;
+      audioSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error populating audio devices:", error);
+  }
+}
+
+// Llama a la función cuando el DOM esté listo
+document.addEventListener("DOMContentLoaded", populateAudioDevices);
 
 function gotStream(stream) {
   window.stream = stream;
