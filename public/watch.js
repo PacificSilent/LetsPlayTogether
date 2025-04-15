@@ -601,6 +601,14 @@ document.addEventListener("DOMContentLoaded", () => {
 // -------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Función para detectar iOS
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+
+  // Si es iOS, no se creará ni mostrará el control de volumen
+  if (isIOS()) return;
+
   const videoElem = document.getElementById("video");
   const optionsPanel = document.getElementById("options-panel");
 
