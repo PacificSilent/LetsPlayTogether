@@ -892,18 +892,18 @@ socket.on("selectQuality", ({ peerId, quality }) => {
       width: 1920,
       height: 1080,
     },
-    // 144060: {
-    //   maxBitrate: 20000000,
-    //   maxFramerate: 60,
-    //   width: 2560,
-    //   height: 1440,
-    // },
-    // 216060: {
-    //   maxBitrate: 50000000,
-    //   maxFramerate: 60,
-    //   width: 3840,
-    //   height: 2160,
-    // },
+    144060: {
+      maxBitrate: 20000000,
+      maxFramerate: 60,
+      width: 2560,
+      height: 1440,
+    },
+    216060: {
+      maxBitrate: 50000000,
+      maxFramerate: 60,
+      width: 3840,
+      height: 2160,
+    },
   };
 
   // Actualizar parámetros de codificación del peer seleccionado
@@ -929,9 +929,9 @@ socket.on("selectQuality", ({ peerId, quality }) => {
           const clonedTrack = originalTrack.clone();
           clonedTrack
             .applyConstraints({
-              width: qualityConfig[quality].width,
-              height: qualityConfig[quality].height,
-              frameRate: qualityConfig[quality].maxFramerate,
+              width: { ideal: qualityConfig[quality].width },
+              height: { ideal: qualityConfig[quality].height },
+              frameRate: { ideal: qualityConfig[quality].maxFramerate },
             })
             .then(() => {
               videoSender.replaceTrack(clonedTrack);
