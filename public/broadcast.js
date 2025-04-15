@@ -19,6 +19,12 @@ const config = {
   ],
 };
 
+const resolutionConfig = {
+  frameRate: { ideal: 30, max: 30 },
+  width: { ideal: 1280, max: 1280 },
+  height: { ideal: 720, max: 720 },
+};
+
 const socket = io();
 
 socket.emit("broadcasterJoin");
@@ -313,9 +319,13 @@ function getScreen() {
   const audioSource = document.getElementById("audioSource").value;
   return navigator.mediaDevices.getUserMedia({
     video: {
-      frameRate: { ideal: 60, max: 60 },
-      width: { ideal: 1920, max: 1920 },
-      height: { ideal: 1080, max: 1080 },
+      ...resolutionConfig,
+      advanced: [
+        { width: 1280, height: 720 },
+        { width: 1920, height: 1080 },
+        // { width: 2560, height: 1440 },
+        // { width: 3840, height: 2160 },
+      ],
     },
     audio: {
       ...(audioSource ? { deviceId: { exact: audioSource } } : {}),
@@ -366,16 +376,24 @@ function attachTrackErrorHandlers(stream) {
   stream.getVideoTracks().forEach((track) => {
     track.onended = () => {
       console.error("Video track ended. Restarting broadcast...");
-      fallbackBroadcast();
+      fallbackBroadcast(
+        resolutionConfig.frameRate.ideal,
+        resolutionConfig.width.ideal,
+        resolutionConfig.height.ideal
+      );
     };
     track.onerror = (err) => {
       console.error("Video track error:", err);
-      fallbackBroadcast();
+      fallbackBroadcast(
+        resolutionConfig.frameRate.ideal,
+        resolutionConfig.width.ideal,
+        resolutionConfig.height.ideal
+      );
     };
   });
 }
 
-function fallbackBroadcast() {
+function fallbackBroadcast(frameRate, width, height) {
   if (window.stream) {
     window.stream.getTracks().forEach((track) => track.stop());
   }
@@ -383,9 +401,15 @@ function fallbackBroadcast() {
   navigator.mediaDevices
     .getDisplayMedia({
       video: {
-        frameRate: { ideal: 60, max: 60 },
-        width: { ideal: 1920, max: 1920 },
-        height: { ideal: 1080, max: 1080 },
+        frameRate: { ideal: frameRate, max: frameRate },
+        width: { ideal: width, max: width },
+        height: { ideal: height, max: height },
+        advanced: [
+          { width: 1280, height: 720 },
+          { width: 1920, height: 1080 },
+          // { width: 2560, height: 1440 },
+          // { width: 3840, height: 2160 },
+        ],
       },
       audio: {
         noiseSuppression: false,
@@ -844,23 +868,47 @@ changeBtn.addEventListener("click", async () => {
 
 socket.on("selectQuality", ({ peerId, quality }) => {
   const qualityConfig = {
-    ultralow: {
+    72030: {
       maxBitrate: 3000000,
       maxFramerate: 30,
-      scaleResolutionDownBy: 2,
+      width: 1280,
+      height: 720,
     },
-    low: { maxBitrate: 5000000, maxFramerate: 60, scaleResolutionDownBy: 2 },
-    medium: {
+    72060: {
+      maxBitrate: 6000000,
+      maxFramerate: 60,
+      width: 1280,
+      height: 720,
+    },
+    108030: {
       maxBitrate: 8000000,
       maxFramerate: 30,
-      scaleResolutionDownBy: 1.5,
+      width: 1920,
+      height: 1080,
     },
-    high: { maxBitrate: 20000000, maxFramerate: 60, scaleResolutionDownBy: 1 },
+    108060: {
+      maxBitrate: 12000000,
+      maxFramerate: 60,
+      width: 1920,
+      height: 1080,
+    },
+    // 144060: {
+    //   maxBitrate: 20000000,
+    //   maxFramerate: 60,
+    //   width: 2560,
+    //   height: 1440,
+    // },
+    // 216060: {
+    //   maxBitrate: 50000000,
+    //   maxFramerate: 60,
+    //   width: 3840,
+    //   height: 2160,
+    // },
   };
 
+  // Actualizar parámetros de codificación del peer seleccionado
   const videoSender = videoSenders[peerId];
   if (videoSender) {
-    videoSenders[peerId] = videoSender;
     const params = videoSender.getParameters();
     if (!params.encodings) {
       params.encodings = [{}];
@@ -868,14 +916,38 @@ socket.on("selectQuality", ({ peerId, quality }) => {
     params.encodings[0].maxBitrate = qualityConfig[quality].maxBitrate;
     params.degradationPreference = "balanced";
     params.encodings[0].maxFramerate = qualityConfig[quality].maxFramerate;
-    params.scaleResolutionDownBy = qualityConfig[quality].scaleResolutionDownBy;
+
     videoSender
       .setParameters(params)
       .then(() => {
         console.log("Encoding parameters updated for peer", peerId);
+
+        // Actualizar la resolución solo para el peer seleccionado:
+        if (broadcastStream) {
+          const originalTrack = broadcastStream.getVideoTracks()[0];
+          // Clonar el track para aplicar restricciones de forma individual
+          const clonedTrack = originalTrack.clone();
+          clonedTrack
+            .applyConstraints({
+              width: qualityConfig[quality].width,
+              height: qualityConfig[quality].height,
+              frameRate: qualityConfig[quality].maxFramerate,
+            })
+            .then(() => {
+              videoSender.replaceTrack(clonedTrack);
+              console.log(
+                "Peer",
+                peerId,
+                "video track replaced with updated resolution"
+              );
+            })
+            .catch((err) => {
+              console.error("Error applying constraints to cloned track:", err);
+            });
+        }
       })
       .catch((err) => {
-        console.error("Error updating parameters:", err);
+        console.error("Error updating encoding parameters:", err);
       });
   }
 });

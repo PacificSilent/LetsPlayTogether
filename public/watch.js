@@ -14,9 +14,6 @@ const config = {
   ],
 };
 
-let measuredFrameRate = 0;
-let lastFrameTimestamp = null;
-
 const video = document.getElementById("video");
 const modal = document.getElementById("modal");
 
@@ -293,9 +290,6 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="flex justify-between"><span class="text-gray-400">WebRTC FPS:</span> <span class="font-medium">${
             framesPerSecond || 0
           }</span></p>
-          <p class="flex justify-between"><span class="text-gray-400">Video FPS:</span> <span class="font-medium">${
-            measuredFrameRate ? measuredFrameRate.toFixed(2) : 0
-          }</span></p>
           <p class="flex justify-between"><span class="text-gray-400">Packet Loss:</span> <span class="font-medium">${
             packetsLost || 0
           }</span></p>
@@ -452,30 +446,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // -------------------------
-// Medición de FPS del video
-// -------------------------
-function measureFrameRate() {
-  if ("requestVideoFrameCallback" in video) {
-    video.requestVideoFrameCallback((now, metadata) => {
-      if (lastFrameTimestamp) {
-        const delta = now - lastFrameTimestamp;
-        measuredFrameRate = 1000 / delta;
-      }
-      lastFrameTimestamp = now;
-      measureFrameRate();
-    });
-  } else {
-    console.warn(
-      "requestVideoFrameCallback no está soportado en este navegador."
-    );
-  }
-}
-
-video.addEventListener("playing", () => {
-  measureFrameRate();
-});
-
-// -------------------------
 // Panel de Calidad de Stream y Toggling con Botón de Opciones
 // -------------------------
 document.addEventListener("DOMContentLoaded", () => {
@@ -500,17 +470,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectWrapper = document.createElement("div");
   selectWrapper.className = "relative";
 
-  // Crear el select de calidad
+  // Crear el select de calidad con los values compatibles con qualityConfig
   const qualitySelector = document.createElement("select");
   qualitySelector.id = "qualitySelector";
   qualitySelector.className =
     "w-full bg-gray-800 text-white border border-purple-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition appearance-none";
   qualitySelector.innerHTML = `
-    <option value="high">1080p/60 - Alta</option>
-    <option value="medium">1080p/30 - Media</option>
-    <option value="low">720p/60 - Baja</option>
-    <option value="ultralow">720p/30 - Mínima</option>
+    <option value="72030">720p/30 - Mínima</option>
+    <option value="72060">720p/60 - Baja</option>
+    <option value="108030">1080p/30 - Media</option>
+    <option value="108060">1080p/60 - Alta</option>
   `;
+
+  // <option value="144060">1440p/60</option>
+  // <option value="216060">2160p/60</option>
 
   // Flecha de dropdown
   const dropdownArrow = document.createElement("div");
@@ -554,10 +527,12 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.appendChild(toastContainer);
     }
     const qualityLabels = {
-      high: "Alta (1080p/60)",
-      medium: "Media (1080p/30)",
-      low: "Baja (720p/60)",
-      ultralow: "Mínima (720p/30)",
+      72030: "Mínima (720p/30)",
+      72060: "Baja (720p/60)",
+      108030: "Media (1080p/30)",
+      108060: "Alta (1080p/60)",
+      // 144060: "1440p/60",
+      // 216060: "2160p/60",
     };
     const toast = document.createElement("div");
     toast.className =
