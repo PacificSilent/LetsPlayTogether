@@ -595,3 +595,193 @@ document.addEventListener("DOMContentLoaded", () => {
     e.stopPropagation();
   });
 });
+
+// -------------------------
+// Control de Volumen del Video
+// -------------------------
+
+document.addEventListener("DOMContentLoaded", () => {
+  const videoElem = document.getElementById("video");
+  const optionsPanel = document.getElementById("options-panel");
+
+  // Crear el contenedor del control de volumen
+  const volumeContainer = document.createElement("div");
+  volumeContainer.className =
+    "w-full bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md transition-colors mt-3";
+
+  // Crear el encabezado con icono y etiqueta
+  const volumeHeader = document.createElement("div");
+  volumeHeader.className = "flex items-center justify-between mb-2";
+
+  // Etiqueta con icono para el control de volumen
+  const volumeLabel = document.createElement("label");
+  volumeLabel.setAttribute("for", "volume-slider");
+  volumeLabel.className = "text-sm font-medium flex items-center";
+  volumeLabel.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+    </svg>
+    Volume
+  `;
+
+  // Indicador de porcentaje
+  const volumePercentage = document.createElement("span");
+  volumePercentage.id = "volume-percentage";
+  volumePercentage.className = "text-xs font-medium text-primary";
+  volumePercentage.textContent = `${Math.round(videoElem.volume * 100)}%`;
+
+  volumeHeader.appendChild(volumeLabel);
+  volumeHeader.appendChild(volumePercentage);
+
+  // Contenedor para el slider y la barra de progreso
+  const sliderContainer = document.createElement("div");
+  sliderContainer.className = "relative h-6 flex items-center";
+
+  // Barra de fondo
+  const sliderBackground = document.createElement("div");
+  sliderBackground.className = "absolute w-full h-1.5 bg-gray-800 rounded-full";
+
+  // Barra de progreso
+  const sliderProgress = document.createElement("div");
+  sliderProgress.id = "volume-progress";
+  sliderProgress.className =
+    "absolute h-1.5 bg-gradient-to-r from-purple-700 to-primary rounded-full";
+  sliderProgress.style.width = `${videoElem.volume * 100}%`;
+
+  // Crear el slider de volumen
+  const volumeSlider = document.createElement("input");
+  volumeSlider.type = "range";
+  volumeSlider.id = "volume-slider";
+  volumeSlider.min = "0";
+  volumeSlider.max = "1";
+  volumeSlider.step = "0.01";
+  volumeSlider.value = videoElem.volume; // Valor inicial
+  volumeSlider.className =
+    "absolute w-full appearance-none bg-transparent cursor-pointer z-10";
+
+  // Agregar elementos al contenedor del slider
+  sliderContainer.appendChild(sliderBackground);
+  sliderContainer.appendChild(sliderProgress);
+  sliderContainer.appendChild(volumeSlider);
+
+  // Indicadores de volumen bajo/alto
+  const volumeIndicators = document.createElement("div");
+  volumeIndicators.className =
+    "flex justify-between text-xs text-gray-400 mt-1";
+  volumeIndicators.innerHTML = `
+    <span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      </svg>
+    </span>
+    <span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      </svg>
+    </span>
+  `;
+
+  // Al mover el slider se actualiza el volume del video
+  volumeSlider.addEventListener("input", (e) => {
+    const value = e.target.value;
+    videoElem.volume = value;
+
+    // Actualizar elementos visuales
+    sliderProgress.style.width = `${value * 100}%`;
+    volumePercentage.textContent = `${Math.round(value * 100)}%`;
+
+    // Cambiar el icono según el nivel de volumen
+    updateVolumeIcon(value);
+
+    console.log("Volumen ajustado a:", value);
+  });
+
+  // Función para actualizar el icono según el nivel de volumen
+  function updateVolumeIcon(value) {
+    const iconContainer = volumeLabel.querySelector("svg");
+    if (!iconContainer) return;
+
+    let iconPath = "";
+
+    if (value === 0) {
+      // Muted icon
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />`;
+    } else if (value < 0.5) {
+      // Low volume icon
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072" />`;
+    } else {
+      // High volume icon
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />`;
+    }
+
+    iconContainer.innerHTML = iconPath;
+  }
+
+  // Agregar elementos al contenedor principal
+  volumeContainer.appendChild(volumeHeader);
+  volumeContainer.appendChild(sliderContainer);
+  volumeContainer.appendChild(volumeIndicators);
+
+  // Agregar estilos personalizados para el slider
+  const sliderStyles = document.createElement("style");
+  sliderStyles.textContent = `
+    /* Estilos para el thumb (control deslizante) */
+    #volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #9333ea;
+      cursor: pointer;
+      border: 2px solid #d8b4fe;
+      box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
+      transition: all 0.2s ease;
+    }
+    
+    #volume-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #9333ea;
+      cursor: pointer;
+      border: 2px solid #d8b4fe;
+      box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
+      transition: all 0.2s ease;
+    }
+    
+    /* Efectos hover */
+    #volume-slider::-webkit-slider-thumb:hover {
+      background: #7e22ce;
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(147, 51, 234, 0.7);
+    }
+    
+    #volume-slider::-moz-range-thumb:hover {
+      background: #7e22ce;
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(147, 51, 234, 0.7);
+    }
+    
+    /* Ocultar el track predeterminado */
+    #volume-slider::-webkit-slider-runnable-track {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 0px;
+      background: transparent;
+    }
+    
+    #volume-slider::-moz-range-track {
+      height: 0px;
+      background: transparent;
+    }
+  `;
+  document.head.appendChild(sliderStyles);
+
+  // Agregar al panel de opciones
+  if (optionsPanel) {
+    optionsPanel.appendChild(volumeContainer);
+  }
+});
