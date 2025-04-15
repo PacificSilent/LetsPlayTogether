@@ -601,12 +601,15 @@ document.addEventListener("DOMContentLoaded", () => {
 // -------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Función para detectar iOS
+  // Detección mejorada para dispositivos iOS e iPadOS
   function isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    );
   }
 
-  // Si es iOS, no se creará ni mostrará el control de volumen
+  // Si es iOS o iPadOS, se salta la creación del control de volumen
   if (isIOS()) return;
 
   const videoElem = document.getElementById("video");
@@ -663,7 +666,7 @@ document.addEventListener("DOMContentLoaded", () => {
   volumeSlider.min = "0";
   volumeSlider.max = "1";
   volumeSlider.step = "0.01";
-  volumeSlider.value = videoElem.volume; // Valor inicial
+  volumeSlider.value = videoElem.volume;
   volumeSlider.className =
     "absolute w-full appearance-none bg-transparent cursor-pointer z-10";
 
@@ -693,14 +696,9 @@ document.addEventListener("DOMContentLoaded", () => {
   volumeSlider.addEventListener("input", (e) => {
     const value = e.target.value;
     videoElem.volume = value;
-
-    // Actualizar elementos visuales
     sliderProgress.style.width = `${value * 100}%`;
     volumePercentage.textContent = `${Math.round(value * 100)}%`;
-
-    // Cambiar el icono según el nivel de volumen
     updateVolumeIcon(value);
-
     console.log("Volumen ajustado a:", value);
   });
 
@@ -711,16 +709,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let iconPath = "";
 
-    if (value === 0) {
-      // Muted icon
+    if (value === "0" || parseFloat(value) === 0) {
       iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />`;
-    } else if (value < 0.5) {
-      // Low volume icon
+    } else if (parseFloat(value) < 0.5) {
       iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072" />`;
     } else {
-      // High volume icon
       iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />`;
     }
 
@@ -735,7 +730,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Agregar estilos personalizados para el slider
   const sliderStyles = document.createElement("style");
   sliderStyles.textContent = `
-    /* Estilos para el thumb (control deslizante) */
     #volume-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
@@ -748,7 +742,6 @@ document.addEventListener("DOMContentLoaded", () => {
       box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
       transition: all 0.2s ease;
     }
-    
     #volume-slider::-moz-range-thumb {
       width: 14px;
       height: 14px;
@@ -759,28 +752,17 @@ document.addEventListener("DOMContentLoaded", () => {
       box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
       transition: all 0.2s ease;
     }
-    
-    /* Efectos hover */
     #volume-slider::-webkit-slider-thumb:hover {
       background: #7e22ce;
       transform: scale(1.1);
       box-shadow: 0 0 10px rgba(147, 51, 234, 0.7);
     }
-    
     #volume-slider::-moz-range-thumb:hover {
       background: #7e22ce;
       transform: scale(1.1);
       box-shadow: 0 0 10px rgba(147, 51, 234, 0.7);
     }
-    
-    /* Ocultar el track predeterminado */
-    #volume-slider::-webkit-slider-runnable-track {
-      -webkit-appearance: none;
-      appearance: none;
-      height: 0px;
-      background: transparent;
-    }
-    
+    #volume-slider::-webkit-slider-runnable-track,
     #volume-slider::-moz-range-track {
       height: 0px;
       background: transparent;
@@ -788,7 +770,7 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
   document.head.appendChild(sliderStyles);
 
-  // Agregar al panel de opciones
+  // Agregar el control de volumen al panel de opciones
   if (optionsPanel) {
     optionsPanel.appendChild(volumeContainer);
   }
