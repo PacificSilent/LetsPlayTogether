@@ -321,10 +321,22 @@ function getScreen() {
     video: {
       ...resolutionConfig,
       advanced: [
-        { width: 1280, height: 720 },
-        { width: 1920, height: 1080 },
-        // { width: 2560, height: 1440 },
-        // { width: 3840, height: 2160 },
+        {
+          width: { ideal: 1280, max: 1280 },
+          height: { ideal: 720, max: 720 },
+        },
+        {
+          width: { ideal: 1920, max: 1920 },
+          height: { ideal: 1080, max: 1080 },
+        },
+        {
+          width: { ideal: 2560, max: 2560 },
+          height: { ideal: 1440, max: 1440 },
+        },
+        {
+          width: { ideal: 3840, max: 3840 },
+          height: { ideal: 2160, max: 2160 },
+        },
       ],
     },
     audio: {
@@ -405,10 +417,22 @@ function fallbackBroadcast(frameRate, width, height) {
         width: { ideal: width, max: width },
         height: { ideal: height, max: height },
         advanced: [
-          { width: 1280, height: 720 },
-          { width: 1920, height: 1080 },
-          // { width: 2560, height: 1440 },
-          // { width: 3840, height: 2160 },
+          {
+            width: { ideal: 1280, max: 1280 },
+            height: { ideal: 720, max: 720 },
+          },
+          {
+            width: { ideal: 1920, max: 1920 },
+            height: { ideal: 1080, max: 1080 },
+          },
+          {
+            width: { ideal: 2560, max: 2560 },
+            height: { ideal: 1440, max: 1440 },
+          },
+          {
+            width: { ideal: 3840, max: 3840 },
+            height: { ideal: 2160, max: 2160 },
+          },
         ],
       },
       audio: {
@@ -929,9 +953,18 @@ socket.on("selectQuality", ({ peerId, quality }) => {
           const clonedTrack = originalTrack.clone();
           clonedTrack
             .applyConstraints({
-              width: { ideal: qualityConfig[quality].width },
-              height: { ideal: qualityConfig[quality].height },
-              frameRate: { ideal: qualityConfig[quality].maxFramerate },
+              width: {
+                exact: qualityConfig[quality].width,
+                max: qualityConfig[quality].width,
+              },
+              height: {
+                exact: qualityConfig[quality].height,
+                max: qualityConfig[quality].height,
+              },
+              frameRate: {
+                exact: qualityConfig[quality].maxFramerate,
+                max: qualityConfig[quality].maxFramerate,
+              },
             })
             .then(() => {
               videoSender.replaceTrack(clonedTrack);
