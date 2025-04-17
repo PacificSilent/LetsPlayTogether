@@ -29,7 +29,15 @@ const socket = io();
 
 socket.emit("broadcasterJoin");
 
+// Declara la variable global para el sonido de notificación:
+const connectionSound = new Audio("/sounds/notify.mp3");
+
 socket.on("newPeerRequest", (data) => {
+  // Reproduce el sonido cada vez que llegue una nueva solicitud
+  connectionSound
+    .play()
+    .catch((err) => console.error("Error playing sound:", err));
+
   const peerList = document.getElementById("peerList");
 
   // Remove placeholder if it exists
