@@ -476,10 +476,10 @@ document.addEventListener("DOMContentLoaded", () => {
   qualitySelector.className =
     "w-full bg-gray-800 text-white border border-purple-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition appearance-none";
   qualitySelector.innerHTML = `
-    <option value="72030">720p/30 - Mínima</option>
-    <option value="72060">720p/60 - Baja</option>
-    <option value="108030">1080p/30 - Media</option>
-    <option value="108060">1080p/60 - Alta</option>
+    <option value="72030">Min</option>
+    <option value="72060">Low</option>
+    <option value="108030">Medium</option>
+    <option value="108060">High</option>
   `;
 
   // <option value="144060">1440p/60</option>
@@ -527,13 +527,22 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.appendChild(toastContainer);
     }
     const qualityLabels = {
-      72030: "Mínima (720p/30)",
-      72060: "Baja (720p/60)",
-      108030: "Media (1080p/30)",
-      108060: "Alta (1080p/60)",
+      72030: "Min",
+      72060: "Low",
+      108030: "Medium",
+      108060: "High",
       // 144060: "1440p/60",
       // 216060: "2160p/60",
     };
+
+    // const qualityLabels = {
+    //   72030: "Mínima (720p/30)",
+    //   72060: "Baja (720p/60)",
+    //   108030: "Media (1080p/30)",
+    //   108060: "Alta (1080p/60)",
+    //   144060: "1440p/60",
+    //   216060: "2160p/60",
+    // };
     const toast = document.createElement("div");
     toast.className =
       "bg-gray-900 border border-purple-700 rounded-lg shadow-lg p-3 mb-3 flex items-center";
@@ -710,13 +719,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let iconPath = "";
 
     if (value === "0" || parseFloat(value) === 0) {
-      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />`;
     } else if (parseFloat(value) < 0.5) {
-      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072" />`;
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072" />`;
     } else {
-      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />`;
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />`;
     }
 
     iconContainer.innerHTML = iconPath;

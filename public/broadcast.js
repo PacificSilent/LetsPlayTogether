@@ -320,24 +320,6 @@ function getScreen() {
   return navigator.mediaDevices.getUserMedia({
     video: {
       ...resolutionConfig,
-      advanced: [
-        {
-          width: { ideal: 1280, max: 1280 },
-          height: { ideal: 720, max: 720 },
-        },
-        {
-          width: { ideal: 1920, max: 1920 },
-          height: { ideal: 1080, max: 1080 },
-        },
-        {
-          width: { ideal: 2560, max: 2560 },
-          height: { ideal: 1440, max: 1440 },
-        },
-        {
-          width: { ideal: 3840, max: 3840 },
-          height: { ideal: 2160, max: 2160 },
-        },
-      ],
     },
     audio: {
       ...(audioSource ? { deviceId: { exact: audioSource } } : {}),
@@ -411,29 +393,11 @@ function fallbackBroadcast(frameRate, width, height) {
   }
   console.log("Attempting lower quality broadcast as fallback...");
   navigator.mediaDevices
-    .getDisplayMedia({
+    .getUserMedia({
       video: {
         frameRate: { ideal: frameRate, max: frameRate },
         width: { ideal: width, max: width },
         height: { ideal: height, max: height },
-        advanced: [
-          {
-            width: { ideal: 1280, max: 1280 },
-            height: { ideal: 720, max: 720 },
-          },
-          {
-            width: { ideal: 1920, max: 1920 },
-            height: { ideal: 1080, max: 1080 },
-          },
-          {
-            width: { ideal: 2560, max: 2560 },
-            height: { ideal: 1440, max: 1440 },
-          },
-          {
-            width: { ideal: 3840, max: 3840 },
-            height: { ideal: 2160, max: 2160 },
-          },
-        ],
       },
       audio: {
         noiseSuppression: false,
@@ -916,18 +880,18 @@ socket.on("selectQuality", ({ peerId, quality }) => {
       width: 1920,
       height: 1080,
     },
-    144060: {
-      maxBitrate: 20000000,
-      maxFramerate: 60,
-      width: 2560,
-      height: 1440,
-    },
-    216060: {
-      maxBitrate: 50000000,
-      maxFramerate: 60,
-      width: 3840,
-      height: 2160,
-    },
+    // 144060: {
+    //   maxBitrate: 20000000,
+    //   maxFramerate: 60,
+    //   width: 2560,
+    //   height: 1440,
+    // },
+    // 216060: {
+    //   maxBitrate: 50000000,
+    //   maxFramerate: 60,
+    //   width: 3840,
+    //   height: 2160,
+    // },
   };
 
   // Actualizar parámetros de codificación del peer seleccionado
@@ -954,12 +918,10 @@ socket.on("selectQuality", ({ peerId, quality }) => {
           clonedTrack
             .applyConstraints({
               width: {
-                exact: qualityConfig[quality].width,
-                max: qualityConfig[quality].width,
+                ideal: qualityConfig[quality].width,
               },
               height: {
-                exact: qualityConfig[quality].height,
-                max: qualityConfig[quality].height,
+                ideal: qualityConfig[quality].height,
               },
               frameRate: {
                 exact: qualityConfig[quality].maxFramerate,

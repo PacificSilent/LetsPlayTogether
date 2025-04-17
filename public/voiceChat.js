@@ -17,6 +17,10 @@ let localNick = ""; // Variable para almacenar el nickname
 
 // Nueva función para poblar los dispositivos de audio para el chat de voz
 async function populateVoiceAudioDevices() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+    console.error("enumerateDevices() not supported.");
+    return;
+  }
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter(
