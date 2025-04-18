@@ -606,6 +606,184 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // -------------------------
+// Agregar botón y modal para votación de juegos
+// -------------------------
+document.addEventListener("DOMContentLoaded", () => {
+  // Obtener el panel de opciones existente (asegúrate de que tenga el id "options-panel")
+  const optionsPanel = document.getElementById("options-panel");
+
+  // Crear y agregar el botón "Start Vote" dentro del panel de opciones
+  const voteButton = document.createElement("button");
+  voteButton.innerHTML = `<i class="fa-solid fa-vote-yea"></i><span> Vote for a Game</span>`;
+  voteButton.className =
+    "w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors";
+  if (optionsPanel) {
+    optionsPanel.appendChild(voteButton);
+  } else {
+    // En caso de que no exista el panel, agregamos al body (fallback)
+    document.body.appendChild(voteButton);
+  }
+
+  voteButton.addEventListener("click", showVoteModal);
+
+  function showVoteToast(gameTitle) {
+    let toastContainer = document.getElementById("vote-toast");
+    if (!toastContainer) {
+      toastContainer = document.createElement("div");
+      toastContainer.id = "vote-toast";
+      // Posicionar en la parte superior central
+      toastContainer.style.position = "fixed";
+      toastContainer.style.top = "20px";
+      toastContainer.style.left = "50%";
+      toastContainer.style.transform = "translateX(-50%)";
+      toastContainer.style.zIndex = "1200";
+      document.body.appendChild(toastContainer);
+    }
+
+    const toast = document.createElement("div");
+    toast.style.background = "#1f2937";
+    toast.style.border = "1px solid #9333ea";
+    toast.style.borderRadius = "8px";
+    toast.style.padding = "10px 15px";
+    toast.style.color = "#fff";
+    toast.style.marginTop = "10px";
+    toast.style.boxShadow = "0 2px 4px rgba(0,0,0,0.3)";
+    toast.style.opacity = "0";
+    toast.style.transition = "opacity 0.5s ease";
+    toast.innerText = `You voted for: ${gameTitle}`;
+
+    toastContainer.appendChild(toast);
+
+    // Forzar reflow y mostrar toast
+    setTimeout(() => {
+      toast.style.opacity = "1";
+    }, 10);
+
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      setTimeout(() => {
+        toast.remove();
+      }, 500);
+    }, 3000);
+  }
+
+  function showVoteModal() {
+    // Crear el overlay del modal
+    const modalOverlay = document.createElement("div");
+    modalOverlay.id = "voteModalOverlay";
+    modalOverlay.style.position = "fixed";
+    modalOverlay.style.top = "0";
+    modalOverlay.style.left = "0";
+    modalOverlay.style.width = "100%";
+    modalOverlay.style.height = "100%";
+    modalOverlay.style.backgroundColor = "rgba(0,0,0,0.7)";
+    modalOverlay.style.display = "flex";
+    modalOverlay.style.justifyContent = "center";
+    modalOverlay.style.alignItems = "center";
+    modalOverlay.style.zIndex = "1100";
+
+    // Crear el contenedor del modal (aumentar el ancho para 4 columnas)
+    const modalContent = document.createElement("div");
+    modalContent.style.backgroundColor = "#1f2937";
+    modalContent.style.padding = "20px";
+    modalContent.style.border = "2px solid #9333ea";
+    modalContent.style.borderRadius = "8px";
+    modalContent.style.width = "600px"; // ancho aumentado para 4 columnas
+    modalContent.style.maxHeight = "80%";
+    modalContent.style.overflowY = "auto";
+
+    // Agregar título al modal
+    const title = document.createElement("h2");
+    title.textContent = "Vote for a Game";
+    title.style.color = "#9333ea";
+    title.style.textAlign = "center";
+    title.style.marginBottom = "10px";
+    modalContent.appendChild(title);
+
+    // Contenedor para la lista de juegos
+    const gamesList = document.createElement("ul");
+    gamesList.style.listStyle = "none";
+    gamesList.style.padding = "0";
+    // Agregar mensaje de loading antes de cargar los datos
+    gamesList.innerHTML =
+      "<li style='color:#fff; text-align:center;'>Loading games, please wait...</li>";
+    modalContent.appendChild(gamesList);
+
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+
+    // Cerrar modal al hacer clic fuera del contenedor
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) {
+        modalOverlay.remove();
+      }
+    });
+
+    // Obtener juegos desde el endpoint /games
+    fetch("/games")
+      .then((response) => response.json())
+      .then((games) => {
+        gamesList.innerHTML = "";
+        // Usar layout grid de 4 columnas con un espacio entre ítems
+        gamesList.style.display = "grid";
+        gamesList.style.gridTemplateColumns = "repeat(4, 1fr)";
+        gamesList.style.gap = "10px";
+
+        games.forEach((game) => {
+          const li = document.createElement("li");
+          li.style.display = "flex";
+          li.style.flexDirection = "column";
+          li.style.alignItems = "center";
+          li.style.padding = "12px";
+          li.style.background = "#374151";
+          li.style.borderRadius = "8px";
+          li.style.cursor = "pointer";
+          li.style.transition = "background 0.2s ease";
+
+          // Cambiar fondo al pasar el ratón
+          li.addEventListener("mouseover", () => {
+            li.style.background = "#4b5563";
+          });
+          li.addEventListener("mouseout", () => {
+            li.style.background = "#374151";
+          });
+
+          // Crear imagen representativa del juego con mayor tamaño
+          const img = document.createElement("img");
+          img.src = game.image;
+          img.alt = game.title;
+          img.style.width = "80px";
+          img.style.height = "80px";
+          img.style.objectFit = "cover";
+          img.style.borderRadius = "8px";
+          img.style.marginBottom = "8px";
+          li.appendChild(img);
+
+          // Agregar título con mejor presentación
+          const span = document.createElement("span");
+          span.textContent = game.title;
+          span.style.color = "#fff";
+          span.style.fontWeight = "bold";
+          span.style.textAlign = "center";
+          li.appendChild(span);
+
+          li.addEventListener("click", () => {
+            // Emitir el voto y cerrar el modal
+            socket.emit("gameVote", game.title);
+            modalOverlay.remove();
+            showVoteToast(game.title);
+          });
+          gamesList.appendChild(li);
+        });
+      })
+      .catch((error) => {
+        gamesList.innerHTML = "<li style='color:red'>Error loading games</li>";
+        console.error("Error fetching games:", error);
+      });
+  }
+});
+
+// -------------------------
 // Control de Volumen del Video
 // -------------------------
 
@@ -691,12 +869,12 @@ document.addEventListener("DOMContentLoaded", () => {
   volumeIndicators.innerHTML = `
     <span>
       <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
       </svg>
     </span>
     <span>
       <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
       </svg>
     </span>
   `;

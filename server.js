@@ -44,6 +44,41 @@ app.get("/watch.html", (req, res) => {
   return res.redirect("/access-denied.html");
 });
 
+// Agregar un objeto para cachear las imágenes de los juegos
+const imageCache = {};
+
+// Endpoint para obtener la lista de juegos
+app.get("/games", async (req, res) => {
+  const gamesData = JSON.parse(fs.readFileSync("./games/games.json", "utf8"));
+  const games = await Promise.all(
+    gamesData.map(async (game, index) => {
+      async function getGameCover(title) {
+        // Si la imagen ya está en cache, la retornamos
+        if (imageCache[title]) {
+          return imageCache[title];
+        }
+        const response = await fetch(
+          `https://api.rawg.io/api/games?key=${
+            process.env.RAWG_API_KEY
+          }&search=${encodeURIComponent(title)}`
+        );
+        const data = await response.json();
+        const foundGame = data.results?.[0];
+        const imageUrl = foundGame?.background_image || "";
+        // Guardar en cache para no volver a llamar a la API para este juego
+        imageCache[title] = imageUrl;
+        return imageUrl;
+      }
+      return {
+        id: index + 1,
+        title: game.Name,
+        image: await getGameCover(game.Name),
+      };
+    })
+  );
+  res.json(games);
+});
+
 let broadcaster;
 const port = 4000;
 
@@ -158,6 +193,12 @@ io.sockets.on("connection", (socket) => {
   socket.on("selectQuality", (data) => {
     // Reenviar la selección de calidad desde el cliente al broadcaster
     io.to(broadcaster).emit("selectQuality", data);
+  });
+
+  socket.on("gameVote", (gameTitle) => {
+    if (broadcaster) {
+      io.to(broadcaster).emit("gameVote", gameTitle);
+    }
   });
 
   // Al desconectar, removemos de la lista de voz si aplica.

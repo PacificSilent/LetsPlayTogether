@@ -954,3 +954,49 @@ socket.on("selectQuality", ({ peerId, quality }) => {
       });
   }
 });
+
+// ---------------------------
+// Sección para mostrar votación de juegos (JUEGO SOLICITADO)
+// ---------------------------
+let gameVotes = {};
+
+// Función para actualizar la visualización de la votación
+function updateGameVoteDisplay() {
+  let html = "";
+  // Ordenar las votaciones de mayor a menor
+  const sortedVotes = Object.keys(gameVotes).sort(
+    (a, b) => gameVotes[b] - gameVotes[a]
+  );
+  if (sortedVotes.length === 0) {
+    html += `<div class="text-gray-500 text-center">No votes received yet</div>`;
+  } else {
+    sortedVotes.forEach((game) => {
+      html += `
+        <div class="flex items-center justify-between bg-gray-800 border border-purple-700 rounded-md p-3 mb-2 shadow-md">
+          <span class="text-white font-semibold">${game}</span>
+          <span class="bg-purple-600 text-white font-bold px-3 py-1 rounded-full">${gameVotes[game]} vote(s)</span>
+        </div>
+      `;
+    });
+  }
+  const container = document.getElementById("gameVoteCard");
+  if (container) {
+    container.innerHTML = html;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const clearVotesBtn = document.getElementById("clearVotesBtn");
+  if (clearVotesBtn) {
+    clearVotesBtn.addEventListener("click", () => {
+      gameVotes = {}; // Limpiar las votaciones
+      updateGameVoteDisplay();
+    });
+  }
+});
+
+// Escuchar el evento gameVote para recibir los votos del watch y actualizar el conteo
+socket.on("gameVote", (gameTitle) => {
+  gameVotes[gameTitle] = (gameVotes[gameTitle] || 0) + 1;
+  updateGameVoteDisplay();
+});

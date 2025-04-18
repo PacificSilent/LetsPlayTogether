@@ -485,6 +485,45 @@
             </ul>
           </div>
         </div>
+
+        <!-- Game Votes Card -->
+        <div
+          class="bg-gray-900 border-2 border-purple-700 rounded-lg shadow-xl overflow-hidden"
+        >
+          <div
+            class="p-4 bg-gray-800 border-b border-gray-700 flex items-center justify-between"
+          >
+            <h2 class="text-xl font-bold text-primary flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16h6"
+                />
+              </svg>
+              Game Votes
+            </h2>
+            <button
+              id="clearVotesBtn"
+              class="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1 rounded transition"
+            >
+              Clear Votes
+            </button>
+          </div>
+          <div
+            id="gameVoteCard"
+            class="p-4 text-gray-300 max-h-[300px] overflow-y-auto"
+          >
+            <p class="text-gray-500 text-center">No votes received yet</p>
+          </div>
+        </div>
       </aside>
     </div>
 
