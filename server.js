@@ -1,5 +1,7 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const fs = require("fs");
+const https = require("https");
 const app = express();
 app.use(cookieParser());
 
@@ -45,8 +47,16 @@ app.get("/watch.html", (req, res) => {
 let broadcaster;
 const port = 4000;
 
-const http = require("http");
-const server = http.createServer(app);
+const sslOptions = {
+  key: fs.readFileSync("./private.key"), // Reemplaza con la ruta a tu clave privada
+  cert: fs.readFileSync("./certificate.crt"), // Reemplaza con la ruta a tu certificado
+  // ca: fs.readFileSync("path/to/ca_bundle.crt"), // Opcional, si necesitas una cadena de autoridad de certificación
+};
+
+const server = https.createServer(sslOptions, app);
+server.listen(port, () =>
+  console.log(`Server is running on port ${port} with HTTPS`)
+);
 
 const io = require("socket.io")(server);
 
@@ -164,5 +174,3 @@ io.sockets.on("connection", (socket) => {
     }
   });
 });
-
-server.listen(port, () => console.log(`Server is running on port ${port}`));
