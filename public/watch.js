@@ -817,7 +817,7 @@ document.addEventListener("DOMContentLoaded", () => {
   volumeLabel.className = "text-sm font-medium flex items-center";
   volumeLabel.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
     </svg>
     Volume
   `;
@@ -961,4 +961,23 @@ document.addEventListener("DOMContentLoaded", () => {
   if (optionsPanel) {
     optionsPanel.appendChild(volumeContainer);
   }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const video = document.getElementById("video");
+  const btnOptions = document.getElementById("btn-options");
+
+  function updateOptionsButtonVisibility() {
+    // Se mostrará solo si hay video reproduciéndose
+    if (video && !video.paused) {
+      btnOptions.classList.remove("hidden");
+    } else {
+      btnOptions.classList.add("hidden");
+    }
+  }
+
+  // Actualizar al iniciar y ante cambios en el estado del video
+  video.addEventListener("play", updateOptionsButtonVisibility);
+  video.addEventListener("pause", updateOptionsButtonVisibility);
+  updateOptionsButtonVisibility();
 });
