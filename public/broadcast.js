@@ -1000,3 +1000,34 @@ socket.on("gameVote", (gameTitle) => {
   gameVotes[gameTitle] = (gameVotes[gameTitle] || 0) + 1;
   updateGameVoteDisplay();
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  const broadcastChatInput = document.getElementById("broadcastChatInput");
+  const broadcastChatMessages = document.getElementById(
+    "broadcastChatMessages"
+  );
+
+  // Enviar mensaje de chat al pulsar Enter
+  broadcastChatInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter" && broadcastChatInput.value.trim() !== "") {
+      const msgData = {
+        nick: "Admin/Host",
+        message: broadcastChatInput.value.trim(),
+      };
+      socket.emit("chatMessage", msgData);
+      broadcastChatInput.value = "";
+    }
+  });
+
+  // Recibir y mostrar mensajes de chat
+  socket.on("chatMessage", (data) => {
+    const msgDiv = document.createElement("div");
+    msgDiv.className =
+      "p-2 rounded-lg bg-gray-800 shadow-sm mb-2 transition-colors duration-150 hover:bg-gray-700";
+    const nickClass =
+      data.nick === "Admin/Host" ? "text-purple-300" : "text-green-300";
+    msgDiv.innerHTML = `<span class="font-semibold ${nickClass}">${data.nick}:</span> <span class="text-gray-200">${data.message}</span>`;
+    broadcastChatMessages.appendChild(msgDiv);
+    broadcastChatMessages.scrollTop = broadcastChatMessages.scrollHeight;
+  });
+});

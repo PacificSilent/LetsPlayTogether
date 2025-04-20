@@ -784,6 +784,27 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // -------------------------
+// Hide / Show Chat
+// -------------------------
+document.addEventListener("DOMContentLoaded", () => {
+  const optionsPanel = document.getElementById("options-panel");
+  const toggleChatBtn = document.createElement("button");
+  toggleChatBtn.innerHTML = `<i class="fa-solid fa-comments"></i><span> Hide/Show Chat</span>`;
+  toggleChatBtn.className =
+    "w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors";
+  toggleChatBtn.addEventListener("click", () => {
+    const textChat = document.getElementById("textChat");
+    // Si el chat está oculto, lo mostramos; de lo contrario, lo ocultamos
+    if (!textChat.style.display || textChat.style.display === "block") {
+      textChat.style.display = "none";
+    } else {
+      textChat.style.display = "block";
+    }
+  });
+  optionsPanel.appendChild(toggleChatBtn);
+});
+
+// -------------------------
 // Control de Volumen del Video
 // -------------------------
 
@@ -980,4 +1001,41 @@ document.addEventListener("DOMContentLoaded", () => {
   video.addEventListener("play", updateOptionsButtonVisibility);
   video.addEventListener("pause", updateOptionsButtonVisibility);
   updateOptionsButtonVisibility();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const chatInput = document.getElementById("chatInput");
+  const chatMessages = document.getElementById("chatMessages");
+
+  chatInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter" && chatInput.value.trim() !== "") {
+      const msgData = {
+        nick: localStorage.getItem("userNick") || "Anonymous",
+        message: chatInput.value.trim(),
+      };
+      socket.emit("chatMessage", msgData);
+      chatInput.value = "";
+    }
+  });
+
+  // Recibir y mostrar mensajes
+  socket.on("chatMessage", (data) => {
+    const msgDiv = document.createElement("div");
+    msgDiv.className =
+      "p-2 rounded-lg bg-gray-700 shadow hover:bg-gray-600 transition-all duration-300";
+    const nickColor =
+      data.nick === "Admin/Host" ? "text-purple-300" : "text-green-300";
+    msgDiv.innerHTML = `<strong class="${nickColor}">${data.nick}:</strong>
+                        <span class="ml-1 text-gray-100">${data.message}</span>`;
+
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    setTimeout(() => {
+      msgDiv.classList.add("opacity-0", "transition-opacity", "duration-500");
+      setTimeout(() => {
+        msgDiv.remove();
+      }, 500);
+    }, 6000);
+  });
 });

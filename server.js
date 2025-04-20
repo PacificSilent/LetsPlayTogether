@@ -89,9 +89,23 @@ const sslOptions = {
 };
 
 const server = https.createServer(sslOptions, app);
-server.listen(port, () =>
-  console.log(`Server is running on port ${port} with HTTPS`)
-);
+
+server.listen(port, () => {
+  console.log(`Server is running on port ${port} with HTTPS`);
+
+  const url = `https://localhost:${port}/broadcast.html`;
+  const startCommand =
+    process.platform === "win32"
+      ? "start"
+      : process.platform === "darwin"
+      ? "open"
+      : "xdg-open";
+  require("child_process").exec(`${startCommand} ${url}`, (error) => {
+    if (error) {
+      console.error("Error al abrir el navegador:", error);
+    }
+  });
+});
 
 const io = require("socket.io")(server);
 
@@ -199,6 +213,17 @@ io.sockets.on("connection", (socket) => {
     if (broadcaster) {
       io.to(broadcaster).emit("gameVote", gameTitle);
     }
+  });
+
+  // Manejo del chat de mensajería
+  socket.on("chatMessage", (data) => {
+    const payload = {
+      id: socket.id,
+      nick: data.nick,
+      message: data.message,
+      timestamp: Date.now(),
+    };
+    io.emit("chatMessage", payload);
   });
 
   // Al desconectar, removemos de la lista de voz si aplica.

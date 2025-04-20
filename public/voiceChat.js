@@ -176,8 +176,10 @@ document.getElementById("voiceToggleBtn")?.addEventListener("click", () => {
   if (isVoiceJoined) {
     leaveVoiceChat();
   } else {
-    // Se asume que el nickname ya está almacenado en localStorage (por ejemplo, tras el login)
-    const nick = localStorage.getItem("userNick") || "Admin";
+    const isBroadcast = window.location.pathname.includes("broadcast");
+    const nick = isBroadcast
+      ? "Admin/Host"
+      : localStorage.getItem("userNick") || "Anonymous";
     joinVoiceChat(nick);
   }
 });
