@@ -2,7 +2,6 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <!-- Para viewport dinámico en móviles -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
@@ -25,6 +24,13 @@
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
+        overscroll-behavior: none;
+      }
+
+      /* Container para los toasts de calidad y votación */
+      #quality-toast,
+      #vote-toast {
+        transition: all 0.5s ease-in-out;
       }
     </style>
     <script>
@@ -70,7 +76,7 @@
 
     <button
       id="btn-options"
-      class="fixed top-4 right-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold rounded-full shadow-lg hover:from-purple-600 hover:to-indigo-600 transition duration-300 hidden"
+      class="fixed top-4 right-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold rounded-full shadow-lg hover:from-purple-600 hover:to-indigo-600 transition duration-300 hidden z-30"
     >
       <i class="fa-solid fa-gear mr-2"></i> Options
     </button>
@@ -93,7 +99,7 @@
     <!-- Options Panel -->
     <div
       id="options-panel"
-      class="fixed top-16 right-4 hidden bg-gray-900 bg-opacity-90 text-white p-4 rounded-lg shadow-lg space-y-3 border border-purple-700 z-30"
+      class="fixed top-16 right-4 hidden bg-gray-900 bg-opacity-90 text-white p-4 rounded-lg shadow-lg space-y-3 border border-purple-700 z-30 w-64"
     >
       <!-- Button to Unmute/Mute -->
       <button
@@ -103,6 +109,7 @@
         <i class="fa-solid fa-volume-high"></i>
         <span>Unmute</span>
       </button>
+
       <!-- Button for Fullscreen (desktop only) -->
       <button
         id="toggle-fullscreen"
@@ -111,14 +118,16 @@
         <i class="fa-solid fa-expand"></i>
         <span>Fullscreen</span>
       </button>
+
       <!-- Button for Statistics -->
       <button
         id="toggle-stats"
         class="w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
       >
         <i class="fa-solid fa-chart-line"></i>
-        <span>Statistics</span>
+        <span>Show Stats</span>
       </button>
+
       <!-- Button to Show Gamepad -->
       <button
         id="show-gamepad"
@@ -127,6 +136,7 @@
         <i class="fa-solid fa-gamepad"></i>
         <span>Show Gamepad</span>
       </button>
+
       <!-- Botón para Chat de Voz -->
       <button
         id="voiceToggleBtn"
@@ -135,6 +145,13 @@
         <i class="fa-solid fa-microphone"></i>
         <span>Join voice chat</span>
       </button>
+
+      <!-- El módulo volume se añadirá aquí dinámicamente -->
+
+      <!-- El botón de toggle chat se añadirá aquí dinámicamente -->
+
+      <!-- El botón de game vote se añadirá aquí dinámicamente -->
+
       <!-- Button to Exit Streaming (red with white text) -->
       <button
         id="exit-streaming"
@@ -179,7 +196,7 @@
       </ul>
     </div>
 
-    <!-- Chat de mensajería -->
+    <!-- Chat de mensajería - ahora con auto-eliminación de mensajes antiguos -->
     <div
       id="textChat"
       class="fixed bottom-0 left-0 w-full md:w-1/4 max-h-1/3 backdrop-blur-sm bg-black bg-opacity-30 p-4 z-40"
@@ -187,7 +204,9 @@
       <div
         id="chatMessages"
         class="max-h-40 overflow-y-auto mb-2 text-sm space-y-1 text-white"
-      ></div>
+      >
+        <!-- Los mensajes aparecerán aquí y se eliminarán automáticamente -->
+      </div>
       <input
         type="text"
         id="chatInput"
@@ -195,6 +214,19 @@
         class="w-full p-3 rounded bg-gray-700 bg-opacity-50 placeholder-gray-300 text-white focus:outline-none focus:bg-opacity-80 focus:ring-2 focus:ring-purple-500 transition"
       />
     </div>
+
+    <!-- Reservar espacio para el contenedor de estadísticas -->
+    <div id="client-stats" class="hidden"></div>
+
+    <!-- Reservar espacio para los toasts de calidad y votación -->
+    <div
+      id="quality-toast"
+      class="fixed top-4 right-4 z-50 transform transition-all duration-500 translate-x-full"
+    ></div>
+    <div
+      id="vote-toast"
+      class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50"
+    ></div>
 
     <!-- Media query para ocultar el botón de pantalla completa en dispositivos móviles -->
     <style>
@@ -205,6 +237,7 @@
       }
     </style>
 
+    <!-- Cargar los scripts en el orden correcto -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="/watch.js"></script>
     <script src="/voiceChat.js"></script>

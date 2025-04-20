@@ -1,10 +1,23 @@
-// -------------------------
-// Configuración y variables globales
-// -------------------------
+/**
+ * Let's Play Together - Client Viewer Module
+ * File structure:
+ * 1. Configuration and globals
+ * 2. WebRTC connection module
+ * 3. Socket.IO event handlers
+ * 4. UI management module
+ * 5. Statistics module
+ * 6. Gamepad control module
+ * 7. Chat module
+ * 8. Quality selection module
+ * 9. Initialization and event listeners
+ */
+
+// ========================
+// 1. CONFIGURATION AND GLOBALS
+// ========================
 let peerConnection;
 const config = {
   iceServers: [
-    // { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:pacificsilent.localto.net:3857" },
     {
       urls: "turn:pacificsilent.localto.net:3857",
@@ -14,216 +27,399 @@ const config = {
   ],
 };
 
+// DOM element references
 const video = document.getElementById("video");
 const modal = document.getElementById("modal");
 
-// -------------------------
-// Conexión de Socket.IO y manejo de eventos
-// -------------------------
+// Socket connection with reconnection capability
 const socket = io.connect(window.location.origin, {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 3000,
 });
 
-socket.on("reconnect_attempt", (attempt) => {
-  console.log(`Reconnection attempt #${attempt}`);
-});
-
-socket.on("disconnect", (reason) => {
-  console.log("Disconnected from server:", reason);
-});
-
-socket.on("offer", (id, description) => {
-  peerConnection = new RTCPeerConnection(config);
-
-  // Monitorizamos el ciclo de vida de la conexión
-  peerConnection.onconnectionstatechange = () => {
-    console.log(
-      "WebRTC connection state changed to:",
-      peerConnection.connectionState
-    );
-    if (
-      peerConnection.connectionState === "disconnected" ||
-      peerConnection.connectionState === "failed"
-    ) {
-      console.warn(
-        `WebRTC connection ${peerConnection.connectionState}. Se ha detectado fallo en la sesión. Reintentando conexión...`
-      );
-      console.log("ICE connection state:", peerConnection.iceConnectionState);
+// ========================
+// 2. WEBRTC CONNECTION MODULE
+// ========================
+const webRTCModule = {
+  /**
+   * Setup WebRTC connection with the broadcaster
+   * @param {string} id - Broadcaster ID
+   * @param {RTCSessionDescription} description - SDP description
+   */
+  setupConnection: function (id, description) {
+    // Close existing connection if any
+    if (peerConnection) {
       peerConnection.close();
-      peerConnection = null;
-      socket.emit("watcher");
     }
-  };
 
-  peerConnection.oniceconnectionstatechange = () => {
-    console.log(
-      "ICE connection state changed to:",
-      peerConnection.iceConnectionState
-    );
-  };
+    peerConnection = new RTCPeerConnection(config);
 
-  // Configuración de SDP y envío de respuesta
-  peerConnection
-    .setRemoteDescription(description)
-    .then(() => peerConnection.createAnswer())
-    .then((sdp) => peerConnection.setLocalDescription(sdp))
-    .then(() => {
-      socket.emit("answer", id, peerConnection.localDescription);
+    // Monitor connection lifecycle
+    peerConnection.onconnectionstatechange = () => {
+      console.log(
+        "WebRTC connection state changed to:",
+        peerConnection.connectionState
+      );
+      if (
+        peerConnection.connectionState === "disconnected" ||
+        peerConnection.connectionState === "failed"
+      ) {
+        console.warn(
+          `WebRTC connection ${peerConnection.connectionState}. Connection failure detected. Attempting to reconnect...`
+        );
+        console.log("ICE connection state:", peerConnection.iceConnectionState);
+        peerConnection.close();
+        peerConnection = null;
+        socket.emit("watcher");
+      }
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log(
+        "ICE connection state changed to:",
+        peerConnection.iceConnectionState
+      );
+    };
+
+    // Set up SDP and send answer
+    peerConnection
+      .setRemoteDescription(description)
+      .then(() => peerConnection.createAnswer())
+      .then((sdp) => peerConnection.setLocalDescription(sdp))
+      .then(() => {
+        socket.emit("answer", id, peerConnection.localDescription);
+      });
+
+    // Handle incoming stream
+    peerConnection.ontrack = (event) => {
+      video.srcObject = event.streams[0];
+      uiModule.hideModal();
+    };
+
+    // Send ICE candidates to broadcaster
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("candidate", id, event.candidate);
+      }
+    };
+  },
+
+  /**
+   * Add ICE candidate received from broadcaster
+   * @param {string} id - Broadcaster ID
+   * @param {RTCIceCandidate} candidate - ICE candidate
+   */
+  addCandidate: function (id, candidate) {
+    if (peerConnection) {
+      peerConnection
+        .addIceCandidate(new RTCIceCandidate(candidate))
+        .catch((e) => console.error("Error adding ICE candidate:", e));
+    }
+  },
+};
+
+// ========================
+// 3. SOCKET.IO EVENT HANDLERS
+// ========================
+const socketModule = {
+  /**
+   * Initialize socket event listeners
+   */
+  init: function () {
+    socket.on("reconnect_attempt", (attempt) => {
+      console.log(`Reconnection attempt #${attempt}`);
     });
 
-  // Manejo del stream
-  peerConnection.ontrack = (event) => {
-    video.srcObject = event.streams[0];
-    modal.style.display = "none";
-  };
+    socket.on("disconnect", (reason) => {
+      console.log("Disconnected from server:", reason);
+    });
 
-  peerConnection.onicecandidate = (event) => {
-    if (event.candidate) {
-      socket.emit("candidate", id, event.candidate);
+    socket.on("connect", () => {
+      socket.emit("watcher");
+    });
+
+    socket.on("broadcaster", () => {
+      socket.emit("watcher");
+    });
+
+    socket.on("offer", (id, description) => {
+      webRTCModule.setupConnection(id, description);
+    });
+
+    socket.on("candidate", (id, candidate) => {
+      webRTCModule.addCandidate(id, candidate);
+    });
+
+    socket.on("admin-ping", (data) => {
+      if (data.target === socket.id) {
+        socket.emit("admin-pong", {
+          peerId: socket.id,
+          pingStart: data.pingStart,
+        });
+      }
+    });
+
+    socket.on("disconnectPeer", (peerId) => {
+      uiModule.showDisconnectModal();
+      sessionManagementModule.clearApprovalAndClose();
+    });
+
+    socket.on("chatMessage", (data) => {
+      chatModule.displayMessage(data);
+    });
+  },
+};
+
+// ========================
+// 4. UI MANAGEMENT MODULE
+// ========================
+const uiModule = {
+  /**
+   * Hide the welcome/status modal
+   */
+  hideModal: function () {
+    if (modal) {
+      modal.style.display = "none";
     }
-  };
-});
+  },
 
-socket.on("candidate", (id, candidate) => {
-  peerConnection
-    .addIceCandidate(new RTCIceCandidate(candidate))
-    .catch((e) => console.error(e));
-});
+  /**
+   * Show disconnection modal with message
+   */
+  showDisconnectModal: function () {
+    if (modal) {
+      modal.style.display = "flex";
+      modal.innerHTML = `
+        <div class="bg-gray-900 border-2 border-purple-700 text-white rounded-lg shadow-xl p-8 text-center max-w-md mx-auto">
+          <div class="mb-4 flex justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-red-500">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-purple-400 mb-4">Disconnected</h2>
+          <p class="text-gray-300 mb-4">You have been disconnected from the session</p>
+          <div class="mt-6">
+            <a href="/" class="bg-primary hover:bg-accent text-white px-4 py-2 rounded-lg font-medium transition-colors inline-block">
+              Return to Home
+            </a>
+          </div>
+        </div>
+      `;
+    }
+  },
 
-socket.on("connect", () => {
-  socket.emit("watcher");
-});
+  /**
+   * Toggle visibility of the options panel
+   * @param {boolean} show - Whether to show or hide
+   */
+  toggleOptionsPanel: function (show) {
+    const optionsPanel = document.getElementById("options-panel");
+    const qualitySelectorContainer = document.getElementById(
+      "qualitySelectorContainer"
+    );
 
-socket.on("broadcaster", () => {
-  socket.emit("watcher");
-});
-
-socket.on("admin-ping", (data) => {
-  if (data.target === socket.id) {
-    socket.emit("admin-pong", { peerId: socket.id, pingStart: data.pingStart });
-  }
-});
-
-socket.on("disconnectPeer", (peerId) => {
-  modal.style.display = "flex";
-  modal.innerHTML = `
-    <div class="bg-gray-900 border-2 border-purple-700 text-white rounded-lg shadow-xl p-8 text-center max-w-md mx-auto">
-      <div class="mb-4 flex justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-red-500">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
-        </svg>
-      </div>
-      <h2 class="text-2xl font-bold text-purple-400 mb-4">Disconnected</h2>
-      <p class="text-gray-300 mb-4">You have been disconnected from the session</p>
-      <div class="mt-6">
-        <a href="/" class="bg-primary hover:bg-accent text-white px-4 py-2 rounded-lg font-medium transition-colors inline-block">
-          Return to Home
-        </a>
-      </div>
-    </div>
-  `;
-  clearApprovalAndClose();
-});
-
-function clearApprovalAndClose() {
-  document.cookie = "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
-  const gamepadContainer = document.getElementById("virtual-gamepad-container");
-  if (gamepadContainer) {
-    gamepadContainer.style.display = "none";
-  }
-  if (socket && socket.connected) {
-    socket.close();
-  }
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
-  setTimeout(() => {
-    window.location.href = "/";
-  }, 1500);
-}
-
-window.addEventListener("beforeunload", clearApprovalAndClose);
-window.addEventListener("unload", clearApprovalAndClose);
-window.addEventListener("pagehide", clearApprovalAndClose);
-
-// -------------------------
-// Estadísticas del cliente y Gamepad (Código de ejemplo)
-// -------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  const optionsPanel = document.getElementById("options-panel");
-  const videoElem = document.getElementById("video");
-  const unmuteBtn = document.getElementById("unmute-video");
-  const toggleStatsButton = document.getElementById("toggle-stats");
-
-  let statsOverlay = document.getElementById("client-stats");
-  if (!statsOverlay) {
-    statsOverlay = document.createElement("div");
-    statsOverlay.id = "client-stats";
-    statsOverlay.style.position = "fixed";
-    statsOverlay.style.top = "80px";
-    statsOverlay.style.left = "10px";
-    statsOverlay.style.background = "rgba(17, 24, 39, 0.9)";
-    statsOverlay.style.color = "#fff";
-    statsOverlay.style.padding = "15px";
-    statsOverlay.style.borderRadius = "8px";
-    statsOverlay.style.zIndex = "50";
-    statsOverlay.style.fontSize = "12px";
-    statsOverlay.style.display = "none";
-    statsOverlay.style.border = "1px solid rgb(147, 51, 234)";
-    statsOverlay.style.backdropFilter = "blur(5px)";
-    statsOverlay.style.boxShadow =
-      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
-    document.body.appendChild(statsOverlay);
-  }
-
-  if (unmuteBtn) {
-    unmuteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      videoElem.muted = !videoElem.muted;
-      const spanText = unmuteBtn.querySelector("span");
-      const iconElem = unmuteBtn.querySelector("i");
-      if (spanText) {
-        spanText.textContent = videoElem.muted ? "Unmute" : "Mute";
-        if (iconElem) {
-          iconElem.className = videoElem.muted
-            ? "fa-solid fa-volume-high"
-            : "fa-solid fa-volume-xmark";
+    if (optionsPanel) {
+      if (show) {
+        optionsPanel.classList.remove("hidden");
+        if (qualitySelectorContainer) {
+          qualitySelectorContainer.style.display = "block";
+        }
+      } else {
+        optionsPanel.classList.add("hidden");
+        if (qualitySelectorContainer) {
+          qualitySelectorContainer.style.display = "none";
         }
       }
-    });
-  }
+    }
+  },
 
-  if (toggleStatsButton) {
-    toggleStatsButton.addEventListener("click", () => {
-      const spanText = toggleStatsButton.querySelector("span");
-      if (statsOverlay.style.display === "none") {
-        statsOverlay.style.display = "block";
-        if (spanText) spanText.textContent = "Hide Stats";
-      } else {
-        statsOverlay.style.display = "none";
-        if (spanText) spanText.textContent = "Show Stats";
-      }
-    });
-  }
+  /**
+   * Update options button visibility based on video playback
+   */
+  updateOptionsButtonVisibility: function () {
+    const btnOptions = document.getElementById("btn-options");
 
-  let prevBytes = 0;
-  let prevTime = Date.now();
-  const joinStats = { bytesReceived: 0, start: Date.now() };
+    // Show only if video is playing
+    if (video && !video.paused) {
+      btnOptions.classList.remove("hidden");
+    } else {
+      btnOptions.classList.add("hidden");
+    }
+  },
 
-  function formatTime(sec) {
+  /**
+   * Setup UI event handlers
+   */
+  setupEventHandlers: function () {
+    // Options button
+    const btnOptions = document.getElementById("btn-options");
+    if (btnOptions) {
+      btnOptions.addEventListener("click", (e) => {
+        const optionsPanel = document.getElementById("options-panel");
+        const panelIsHidden = optionsPanel.classList.contains("hidden");
+        uiModule.toggleOptionsPanel(panelIsHidden);
+        e.stopPropagation();
+      });
+    }
+
+    // Fullscreen toggle
+    const fullscreenBtn = document.getElementById("toggle-fullscreen");
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch((err) => {
+            console.error(`Error enabling fullscreen: ${err.message}`);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+    }
+
+    // Video mute/unmute
+    const unmuteBtn = document.getElementById("unmute-video");
+    if (unmuteBtn) {
+      unmuteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        video.muted = !video.muted;
+        const spanText = unmuteBtn.querySelector("span");
+        const iconElem = unmuteBtn.querySelector("i");
+        if (spanText) {
+          spanText.textContent = video.muted ? "Unmute" : "Mute";
+          if (iconElem) {
+            iconElem.className = video.muted
+              ? "fa-solid fa-volume-high"
+              : "fa-solid fa-volume-xmark";
+          }
+        }
+      });
+    }
+
+    // Exit streaming
+    const exitBtn = document.getElementById("exit-streaming");
+    if (exitBtn) {
+      exitBtn.addEventListener("click", async () => {
+        document.cookie =
+          "streamingEntry=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        if (document.fullscreenElement) {
+          try {
+            await document.exitFullscreen();
+          } catch (err) {
+            console.error(`Error exiting fullscreen: ${err.message}`);
+          }
+        }
+        window.history.back();
+      });
+    }
+
+    // Gamepad toggle
+    const showGamepadBtn = document.getElementById("show-gamepad");
+    if (showGamepadBtn) {
+      showGamepadBtn.addEventListener("click", () => {
+        const gamepadContainer = document.getElementById(
+          "virtual-gamepad-container"
+        );
+
+        if (gamepadContainer) {
+          const isHidden =
+            gamepadContainer.style.display === "none" ||
+            gamepadContainer.style.display === "";
+
+          if (isHidden) {
+            gamepadContainer.style.display = "block";
+            gamepadContainer.style.pointerEvents = "auto";
+            uiModule.toggleOptionsPanel(false);
+          } else {
+            gamepadContainer.style.display = "none";
+            gamepadContainer.style.pointerEvents = "none";
+            uiModule.toggleOptionsPanel(false);
+          }
+        }
+      });
+    }
+
+    // Handle video play/pause events
+    video.addEventListener("play", uiModule.updateOptionsButtonVisibility);
+    video.addEventListener("pause", uiModule.updateOptionsButtonVisibility);
+  },
+};
+
+// ========================
+// 5. STATISTICS MODULE
+// ========================
+const statsModule = {
+  prevBytes: 0,
+  prevTime: Date.now(),
+  joinStats: { bytesReceived: 0, start: Date.now() },
+  statsOverlay: null,
+
+  /**
+   * Initialize statistics module
+   */
+  init: function () {
+    const toggleStatsButton = document.getElementById("toggle-stats");
+
+    // Create stats overlay if it doesn't exist
+    this.statsOverlay = document.getElementById("client-stats");
+    if (!this.statsOverlay) {
+      this.statsOverlay = document.createElement("div");
+      this.statsOverlay.id = "client-stats";
+      this.statsOverlay.style.position = "fixed";
+      this.statsOverlay.style.top = "80px";
+      this.statsOverlay.style.left = "10px";
+      this.statsOverlay.style.background = "rgba(17, 24, 39, 0.9)";
+      this.statsOverlay.style.color = "#fff";
+      this.statsOverlay.style.padding = "15px";
+      this.statsOverlay.style.borderRadius = "8px";
+      this.statsOverlay.style.zIndex = "50";
+      this.statsOverlay.style.fontSize = "12px";
+      this.statsOverlay.style.display = "none";
+      this.statsOverlay.style.border = "1px solid rgb(147, 51, 234)";
+      this.statsOverlay.style.backdropFilter = "blur(5px)";
+      this.statsOverlay.style.boxShadow =
+        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
+      document.body.appendChild(this.statsOverlay);
+    }
+
+    // Toggle stats button
+    if (toggleStatsButton) {
+      toggleStatsButton.addEventListener("click", () => {
+        const spanText = toggleStatsButton.querySelector("span");
+        if (this.statsOverlay.style.display === "none") {
+          this.statsOverlay.style.display = "block";
+          if (spanText) spanText.textContent = "Hide Stats";
+        } else {
+          this.statsOverlay.style.display = "none";
+          if (spanText) spanText.textContent = "Show Stats";
+        }
+      });
+    }
+
+    // Start stats update interval
+    setInterval(() => this.updateStats(), 300);
+  },
+
+  /**
+   * Format seconds into HH:MM:SS
+   * @param {number} sec - Seconds to format
+   * @returns {string} Formatted time string
+   */
+  formatTime: function (sec) {
     const hours = Math.floor(sec / 3600);
     const minutes = Math.floor((sec % 3600) / 60);
     const seconds = sec % 60;
     return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }
+  },
 
-  async function updateClientStats() {
+  /**
+   * Update statistics display
+   */
+  updateStats: async function () {
     if (!peerConnection) return;
+
     let decodeStart = performance.now();
     try {
       const statsReport = await peerConnection.getStats();
@@ -272,19 +468,31 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const now = Date.now();
-      const elapsedSec = (now - prevTime) / 1000;
-      const currentBitrate =
-        elapsedSec > 0 ? ((totalInboundBytes - prevBytes) * 8) / elapsedSec : 0;
-      prevBytes = totalInboundBytes;
-      prevTime = now;
+      const elapsedSec = (now - this.prevTime) / 1000;
+      let currentBitrate = 0;
 
-      joinStats.bytesReceived += totalInboundBytes;
-      const elapsedStreamSec = joinStats.start
-        ? Math.floor((Date.now() - joinStats.start) / 1000)
+      // Agregar verificación para evitar valores incorrectos
+      if (elapsedSec > 0 && totalInboundBytes >= this.prevBytes) {
+        currentBitrate =
+          ((totalInboundBytes - this.prevBytes) * 8) / elapsedSec;
+      } else {
+        console.warn("Invalid bitrate calculation data", {
+          elapsed: elapsedSec,
+          total: totalInboundBytes,
+          prev: this.prevBytes,
+        });
+      }
+
+      this.prevBytes = totalInboundBytes;
+      this.prevTime = now;
+
+      this.joinStats.bytesReceived += totalInboundBytes;
+      const elapsedStreamSec = this.joinStats.start
+        ? Math.floor((Date.now() - this.joinStats.start) / 1000)
         : 0;
       const decodeTime = performance.now() - decodeStart;
 
-      statsOverlay.innerHTML = `
+      this.statsOverlay.innerHTML = `
         <div class="space-y-2">
           <h3 class="font-bold text-purple-400 border-b border-purple-700 pb-1 mb-2">Stream Statistics</h3>
           <p class="flex justify-between"><span class="text-gray-400">WebRTC FPS:</span> <span class="font-medium">${
@@ -314,10 +522,17 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="flex justify-between"><span class="text-gray-400">Audio Sample Rate:</span> <span class="font-medium">${
             audioSampleRate || 0
           }</span></p>
-          <p class="flex justify-between"><span class="text-gray-400">Bitrate:</span> <span class="font-medium">${
-            (currentBitrate / 1000).toFixed(2) || 0
-          } kbps</span></p>
-          <p class="flex justify-between"><span class="text-gray-400">Streaming:</span> <span class="font-medium">${formatTime(
+          <p class="flex justify-between">
+            <span class="text-gray-400">Bitrate:</span> 
+            <span class="font-medium">${
+              currentBitrate === 0
+                ? "0.00 kbps"
+                : currentBitrate > 1000000
+                ? (currentBitrate / 1000000).toFixed(2) + " Mbps"
+                : (currentBitrate / 1000).toFixed(2) + " kbps"
+            }</span>
+          </p>
+          <p class="flex justify-between"><span class="text-gray-400">Streaming:</span> <span class="font-medium">${this.formatTime(
             elapsedStreamSec
           )}</span></p>
           <p class="flex justify-between"><span class="text-gray-400">Decode Time:</span> <span class="font-medium">${decodeTime.toFixed(
@@ -328,39 +543,57 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       console.error("Error fetching stats:", err);
     }
-  }
+  },
+};
 
-  setInterval(updateClientStats, 300);
+// ========================
+// 6. GAMEPAD CONTROL MODULE
+// ========================
+const gamepadModule = {
+  maxJoysticks: 4,
+  joystickMapping: {},
+  prevValues: {},
 
-  // Gamepad polling (si aplica)
-  const maxJoysticks = 4;
-  const joystickMapping = {};
-  const prevValues = {};
+  /**
+   * Initialize gamepad polling
+   */
+  init: function () {
+    this.poll();
+  },
 
-  function pollGamepads() {
+  /**
+   * Continuously poll for connected gamepads and send their data
+   */
+  poll: function () {
     if (!video.srcObject || !peerConnection) {
-      requestAnimationFrame(pollGamepads);
+      requestAnimationFrame(() => this.poll());
       return;
     }
+
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
     for (let gp of gamepads) {
       if (gp && socket.id) {
-        if (!(gp.index in joystickMapping)) {
-          if (Object.keys(joystickMapping).length < maxJoysticks) {
-            joystickMapping[gp.index] = Object.keys(joystickMapping).length + 1;
+        if (!(gp.index in this.joystickMapping)) {
+          if (Object.keys(this.joystickMapping).length < this.maxJoysticks) {
+            this.joystickMapping[gp.index] =
+              Object.keys(this.joystickMapping).length + 1;
           }
         }
-        if (gp.index in joystickMapping) {
-          const joystickId = socket.id + "-" + joystickMapping[gp.index];
+
+        if (gp.index in this.joystickMapping) {
+          const joystickId = socket.id + "-" + this.joystickMapping[gp.index];
           const newData = {
             axes: gp.axes,
             buttons: gp.buttons.map((button) => button.value),
           };
+
+          // Only send if values have changed
           if (
-            !prevValues[joystickId] ||
-            JSON.stringify(prevValues[joystickId]) !== JSON.stringify(newData)
+            !this.prevValues[joystickId] ||
+            JSON.stringify(this.prevValues[joystickId]) !==
+              JSON.stringify(newData)
           ) {
-            prevValues[joystickId] = newData;
+            this.prevValues[joystickId] = newData;
             const data = {
               id: joystickId,
               axes: newData.axes,
@@ -371,153 +604,173 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     }
-    requestAnimationFrame(pollGamepads);
-  }
-  pollGamepads();
-});
+    requestAnimationFrame(() => this.poll());
+  },
+};
 
-// -------------------------
-// Botones adicionales y Fullscreen/Exit Stream
-// -------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  const fullscreenBtn = document.getElementById("toggle-fullscreen");
-  if (fullscreenBtn) {
-    fullscreenBtn.addEventListener("click", () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch((err) => {
-          console.error(`Error enabling fullscreen: ${err.message}`);
-        });
-      } else {
-        document.exitFullscreen();
-      }
-    });
-  }
+// ========================
+// 7. CHAT MODULE
+// ========================
+const chatModule = {
+  /**
+   * Initialize chat functionality
+   */
+  init: function () {
+    const chatInput = document.getElementById("chatInput");
 
-  const exitBtn = document.getElementById("exit-streaming");
-  if (exitBtn) {
-    exitBtn.addEventListener("click", async () => {
-      document.cookie =
-        "streamingEntry=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      if (document.fullscreenElement) {
-        try {
-          await document.exitFullscreen();
-        } catch (err) {
-          console.error(`Error exiting fullscreen: ${err.message}`);
+    // Handle chat input
+    if (chatInput) {
+      chatInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && chatInput.value.trim() !== "") {
+          const msgData = {
+            nick: localStorage.getItem("userNick") || "Anonymous",
+            message: chatInput.value.trim(),
+          };
+          socket.emit("chatMessage", msgData);
+          chatInput.value = "";
         }
-      }
-      window.history.back();
-    });
-  }
-
-  document.getElementById("show-gamepad").addEventListener("click", () => {
-    const gamepadContainer = document.getElementById(
-      "virtual-gamepad-container"
-    );
-    const optionsPanel = document.getElementById("options-panel");
-    const qualitySelectorContainer = document.getElementById(
-      "qualitySelectorContainer"
-    );
-
-    if (gamepadContainer) {
-      // Si el gamepad NO está visible, se muestra y se ocultan los paneles
-      if (
-        gamepadContainer.style.display === "none" ||
-        gamepadContainer.style.display === ""
-      ) {
-        gamepadContainer.style.display = "block";
-        gamepadContainer.style.pointerEvents = "auto";
-        if (optionsPanel) {
-          optionsPanel.classList.add("hidden");
-        }
-        if (qualitySelectorContainer) {
-          qualitySelectorContainer.style.display = "none";
-        }
-      } else {
-        // Si el gamepad está visible y se hace clic, se oculta y se asegura que
-        // el panel de opciones no se muestre
-        gamepadContainer.style.display = "none";
-        gamepadContainer.style.pointerEvents = "none";
-        if (optionsPanel) {
-          optionsPanel.classList.add("hidden");
-        }
-      }
+      });
     }
-  });
-});
 
-// -------------------------
-// Panel de Calidad de Stream y Toggling con Botón de Opciones
-// -------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  // Crear el panel de Calidad de Stream
-  const qualitySelectorContainer = document.createElement("div");
-  qualitySelectorContainer.id = "qualitySelectorContainer";
-  qualitySelectorContainer.className =
-    "fixed bottom-3 right-3 z-50 bg-gray-900 border border-purple-700 rounded-lg shadow-lg p-2 max-w-xs";
+    // Add toggle chat button to options panel
+    this.addToggleChatButton();
+  },
 
-  // Header del panel
-  const header = document.createElement("div");
-  header.className = "flex items-center gap-1.5 mb-2";
-  header.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-    <span class="text-sm font-bold text-primary">Calidad de Stream</span>
-  `;
-  qualitySelectorContainer.appendChild(header);
+  /**
+   * Display a received message in the chat
+   * @param {Object} data - Message data (nick, message)
+   */
+  displayMessage: function (data) {
+    const chatMessages = document.getElementById("chatMessages");
+    if (!chatMessages) return;
 
-  // Wrapper para el select
-  const selectWrapper = document.createElement("div");
-  selectWrapper.className = "relative";
+    const msgDiv = document.createElement("div");
+    msgDiv.className =
+      "p-2 rounded-lg bg-gray-700 shadow hover:bg-gray-600 transition-all duration-300";
+    const nickColor =
+      data.nick === "Admin/Host" ? "text-purple-300" : "text-green-300";
+    msgDiv.innerHTML = `<strong class="${nickColor}">${data.nick}:</strong>
+                        <span class="ml-1 text-gray-100">${data.message}</span>`;
 
-  // Crear el select de calidad con los values compatibles con qualityConfig
-  const qualitySelector = document.createElement("select");
-  qualitySelector.id = "qualitySelector";
-  qualitySelector.className =
-    "w-full bg-gray-800 text-white border border-purple-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition appearance-none";
-  qualitySelector.innerHTML = `
-    <option value="72030">Min</option>
-    <option value="72060">Low</option>
-    <option value="108030">Medium</option>
-    <option value="108060">High</option>
-  `;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
-  // <option value="144060">1440p/60</option>
-  // <option value="216060">2160p/60</option>
+    // Auto-remove old messages
+    setTimeout(() => {
+      msgDiv.classList.add("opacity-0", "transition-opacity", "duration-500");
+      setTimeout(() => {
+        msgDiv.remove();
+      }, 500);
+    }, 6000);
+  },
 
-  // Flecha de dropdown
-  const dropdownArrow = document.createElement("div");
-  dropdownArrow.className =
-    "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary";
-  dropdownArrow.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z" clip-rule="evenodd" />
-    </svg>
-  `;
+  /**
+   * Add toggle chat button to options panel
+   */
+  addToggleChatButton: function () {
+    const optionsPanel = document.getElementById("options-panel");
+    if (!optionsPanel) return;
 
-  selectWrapper.appendChild(qualitySelector);
-  selectWrapper.appendChild(dropdownArrow);
-  qualitySelectorContainer.appendChild(selectWrapper);
+    const toggleChatBtn = document.createElement("button");
+    toggleChatBtn.innerHTML = `<i class="fa-solid fa-comments"></i><span> Hide/Show Chat</span>`;
+    toggleChatBtn.className =
+      "w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors";
+    toggleChatBtn.addEventListener("click", () => {
+      const textChat = document.getElementById("textChat");
+      if (!textChat) return;
 
-  // Agregar el panel a la página y ocultarlo inicialmente
-  document.body.appendChild(qualitySelectorContainer);
-  qualitySelectorContainer.style.display = "none";
+      // Toggle visibility
+      if (!textChat.style.display || textChat.style.display === "block") {
+        textChat.style.display = "none";
+      } else {
+        textChat.style.display = "block";
+      }
+    });
 
-  // Evento "change" del select de calidad
-  qualitySelector.addEventListener("change", (e) => {
-    const quality = e.target.value;
-    showQualityToast(quality);
-    socket.emit("selectQuality", { peerId: socket.id, quality });
-    console.log("Calidad seleccionada:", quality);
+    optionsPanel.appendChild(toggleChatBtn);
+  },
+};
+
+// ========================
+// 8. QUALITY SELECTION MODULE
+// ========================
+const qualityModule = {
+  /**
+   * Initialize quality selection panel
+   */
+  init: function () {
+    this.createQualitySelector();
+  },
+
+  /**
+   * Create quality selector panel
+   */
+  createQualitySelector: function () {
+    // Create the quality selector container
+    const qualitySelectorContainer = document.createElement("div");
+    qualitySelectorContainer.id = "qualitySelectorContainer";
+    qualitySelectorContainer.className =
+      "fixed bottom-3 right-3 z-50 bg-gray-900 border border-purple-700 rounded-lg shadow-lg p-2 max-w-xs";
+
+    // Header
+    const header = document.createElement("div");
+    header.className = "flex items-center gap-1.5 mb-2";
+    header.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+      </svg>
+      <span class="text-sm font-bold text-primary">Stream Quality</span>
+    `;
+    qualitySelectorContainer.appendChild(header);
+
+    // Select wrapper
+    const selectWrapper = document.createElement("div");
+    selectWrapper.className = "relative";
+
+    // Quality options
+    const qualitySelector = document.createElement("select");
+    qualitySelector.id = "qualitySelector";
+    qualitySelector.className =
+      "w-full bg-gray-800 text-white border border-purple-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition appearance-none";
+    qualitySelector.innerHTML = `
+      <option value="72030">Min</option>
+      <option value="72060">Low</option>
+      <option value="108030">Medium</option>
+      <option value="108060">High</option>
+    `;
+
+    // Dropdown arrow
+    const dropdownArrow = document.createElement("div");
+    dropdownArrow.className =
+      "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary";
+    dropdownArrow.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 01-1.414 0l-4-4a1 1 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    `;
+
+    selectWrapper.appendChild(qualitySelector);
+    selectWrapper.appendChild(dropdownArrow);
+    qualitySelectorContainer.appendChild(selectWrapper);
+    document.body.appendChild(qualitySelectorContainer);
     qualitySelectorContainer.style.display = "none";
-    const optionsPanel = document.getElementById("options-panel");
-    if (optionsPanel) {
-      optionsPanel.classList.add("hidden");
-    }
-  });
 
-  // Función para mostrar el toast de calidad
-  function showQualityToast(quality) {
+    // Change event
+    qualitySelector.addEventListener("change", (e) => {
+      const quality = e.target.value;
+      this.showQualityToast(quality);
+      socket.emit("selectQuality", { peerId: socket.id, quality });
+      console.log("Quality selected:", quality);
+      qualitySelectorContainer.style.display = "none";
+      uiModule.toggleOptionsPanel(false);
+    });
+  },
+
+  /**
+   * Show toast notification for quality change
+   * @param {string} quality - Selected quality ID
+   */
+  showQualityToast: function (quality) {
     let toastContainer = document.getElementById("quality-toast");
     if (!toastContainer) {
       toastContainer = document.createElement("div");
@@ -526,23 +779,14 @@ document.addEventListener("DOMContentLoaded", () => {
         "fixed top-4 right-4 z-50 transform transition-all duration-500 translate-x-full";
       document.body.appendChild(toastContainer);
     }
+
     const qualityLabels = {
       72030: "Min",
       72060: "Low",
       108030: "Medium",
       108060: "High",
-      // 144060: "1440p/60",
-      // 216060: "2160p/60",
     };
 
-    // const qualityLabels = {
-    //   72030: "Mínima (720p/30)",
-    //   72060: "Baja (720p/60)",
-    //   108030: "Media (1080p/30)",
-    //   108060: "Alta (1080p/60)",
-    //   144060: "1440p/60",
-    //   216060: "2160p/60",
-    // };
     const toast = document.createElement("div");
     toast.className =
       "bg-gray-900 border border-purple-700 rounded-lg shadow-lg p-3 mb-3 flex items-center";
@@ -551,15 +795,17 @@ document.addEventListener("DOMContentLoaded", () => {
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
       </svg>
       <div>
-        <p class="text-white text-sm font-medium">Calidad cambiada</p>
+        <p class="text-white text-sm font-medium">Quality changed</p>
         <p class="text-gray-300 text-xs">${qualityLabels[quality]}</p>
       </div>
     `;
+
     toastContainer.appendChild(toast);
     setTimeout(() => {
       toastContainer.classList.remove("translate-x-full");
       toastContainer.classList.add("translate-x-0");
     }, 10);
+
     setTimeout(() => {
       toast.classList.add("opacity-0");
       setTimeout(() => {
@@ -570,68 +816,252 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }, 300);
     }, 3000);
-  }
-});
+  },
+};
 
-// -------------------------
-// Toggling de Panel de Opciones y de Calidad mediante Botón de Opciones
-// -------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  const optionsPanel = document.getElementById("options-panel");
-  const btnOptions = document.getElementById("btn-options");
-  const qualitySelectorContainer = document.getElementById(
-    "qualitySelectorContainer"
-  );
+// ========================
+// 9. VOLUME CONTROL MODULE
+// ========================
+const volumeModule = {
+  /**
+   * Initialize volume control
+   */
+  init: function () {
+    // Skip on iOS devices (they handle audio differently)
+    if (this.isIOS()) return;
 
-  // Asegurarse de que ambos paneles estén ocultos inicialmente
-  if (optionsPanel) {
-    optionsPanel.classList.add("hidden");
-  }
-  if (qualitySelectorContainer) {
-    qualitySelectorContainer.style.display = "none";
-  }
+    const videoElem = document.getElementById("video");
+    const optionsPanel = document.getElementById("options-panel");
+    if (!videoElem || !optionsPanel) return;
 
-  btnOptions.addEventListener("click", (e) => {
-    // Si el panel de opciones está oculto, lo mostramos y también el panel de calidad.
-    // Si está visible, se ocultan ambos.
-    if (optionsPanel.classList.contains("hidden")) {
-      optionsPanel.classList.remove("hidden");
-      qualitySelectorContainer.style.display = "block";
-    } else {
-      optionsPanel.classList.add("hidden");
-      qualitySelectorContainer.style.display = "none";
+    // Create volume control elements
+    const volumeContainer = this.createVolumeContainer(videoElem);
+    this.addSliderStyles();
+
+    // Add to options panel
+    if (optionsPanel) {
+      optionsPanel.appendChild(volumeContainer);
     }
-    e.stopPropagation();
-  });
-});
+  },
 
-// -------------------------
-// Agregar botón y modal para votación de juegos
-// -------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  // Obtener el panel de opciones existente (asegúrate de que tenga el id "options-panel")
-  const optionsPanel = document.getElementById("options-panel");
+  /**
+   * Check if device is iOS
+   * @returns {boolean} True if iOS device
+   */
+  isIOS: function () {
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    );
+  },
 
-  // Crear y agregar el botón "Start Vote" dentro del panel de opciones
-  const voteButton = document.createElement("button");
-  voteButton.innerHTML = `<i class="fa-solid fa-vote-yea"></i><span> Vote for a Game</span>`;
-  voteButton.className =
-    "w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors";
-  if (optionsPanel) {
+  /**
+   * Create volume container with slider
+   * @param {HTMLVideoElement} videoElem - Video element to control
+   * @returns {HTMLElement} Volume container
+   */
+  createVolumeContainer: function (videoElem) {
+    const volumeContainer = document.createElement("div");
+    volumeContainer.className =
+      "w-full bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md transition-colors mt-3";
+
+    // Header
+    const volumeHeader = document.createElement("div");
+    volumeHeader.className = "flex items-center justify-between mb-2";
+
+    // Label with icon
+    const volumeLabel = document.createElement("label");
+    volumeLabel.setAttribute("for", "volume-slider");
+    volumeLabel.className = "text-sm font-medium flex items-center";
+    volumeLabel.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      </svg>
+      Volume
+    `;
+
+    // Percentage display
+    const volumePercentage = document.createElement("span");
+    volumePercentage.id = "volume-percentage";
+    volumePercentage.className = "text-xs font-medium text-primary";
+    volumePercentage.textContent = `${Math.round(videoElem.volume * 100)}%`;
+
+    volumeHeader.appendChild(volumeLabel);
+    volumeHeader.appendChild(volumePercentage);
+
+    // Slider container
+    const sliderContainer = document.createElement("div");
+    sliderContainer.className = "relative h-6 flex items-center";
+
+    // Background track
+    const sliderBackground = document.createElement("div");
+    sliderBackground.className =
+      "absolute w-full h-1.5 bg-gray-800 rounded-full";
+
+    // Progress indicator
+    const sliderProgress = document.createElement("div");
+    sliderProgress.id = "volume-progress";
+    sliderProgress.className =
+      "absolute h-1.5 bg-gradient-to-r from-purple-700 to-primary rounded-full";
+    sliderProgress.style.width = `${videoElem.volume * 100}%`;
+
+    // Range input
+    const volumeSlider = document.createElement("input");
+    volumeSlider.type = "range";
+    volumeSlider.id = "volume-slider";
+    volumeSlider.min = "0";
+    volumeSlider.max = "1";
+    volumeSlider.step = "0.01";
+    volumeSlider.value = videoElem.volume;
+    volumeSlider.className =
+      "absolute w-full appearance-none bg-transparent cursor-pointer z-10";
+
+    sliderContainer.appendChild(sliderBackground);
+    sliderContainer.appendChild(sliderProgress);
+    sliderContainer.appendChild(volumeSlider);
+
+    // Volume indicators
+    const volumeIndicators = document.createElement("div");
+    volumeIndicators.className =
+      "flex justify-between text-xs text-gray-400 mt-1";
+    volumeIndicators.innerHTML = `
+      <span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+      </span>
+      <span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072" />
+        </svg>
+      </span>
+      <span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+      </span>
+    `;
+
+    // Input event handler
+    volumeSlider.addEventListener("input", (e) => {
+      const value = e.target.value;
+      videoElem.volume = value;
+      sliderProgress.style.width = `${value * 100}%`;
+      volumePercentage.textContent = `${Math.round(value * 100)}%`;
+      this.updateVolumeIcon(volumeLabel, value);
+    });
+
+    // Add all elements to container
+    volumeContainer.appendChild(volumeHeader);
+    volumeContainer.appendChild(sliderContainer);
+    volumeContainer.appendChild(volumeIndicators);
+
+    return volumeContainer;
+  },
+
+  /**
+   * Update volume icon based on level
+   * @param {HTMLElement} volumeLabel - Element containing the volume icon
+   * @param {string|number} value - Volume value
+   */
+  updateVolumeIcon: function (volumeLabel, value) {
+    const iconContainer = volumeLabel.querySelector("svg");
+    if (!iconContainer) return;
+
+    let iconPath = "";
+
+    if (value === "0" || parseFloat(value) === 0) {
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />`;
+    } else if (parseFloat(value) < 0.5) {
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072" />`;
+    } else {
+      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />`;
+    }
+
+    iconContainer.innerHTML = iconPath;
+  },
+
+  /**
+   * Add slider styles to document
+   */
+  addSliderStyles: function () {
+    const sliderStyles = document.createElement("style");
+    sliderStyles.textContent = `
+      #volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #9333ea;
+        cursor: pointer;
+        border: 2px solid #d8b4fe;
+        box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
+        transition: all 0.2s ease;
+      }
+      #volume-slider::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #9333ea;
+        cursor: pointer;
+        border: 2px solid #d8b4fe;
+        box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
+        transition: all 0.2s ease;
+      }
+      #volume-slider::-webkit-slider-thumb:hover {
+        background: #7e22ce;
+        transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(147, 51, 234, 0.7);
+      }
+      #volume-slider::-moz-range-thumb:hover {
+        background: #7e22ce;
+        transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(147, 51, 234, 0.7);
+      }
+      #volume-slider::-webkit-slider-runnable-track,
+      #volume-slider::-moz-range-track {
+        height: 0px;
+        background: transparent;
+      }
+    `;
+    document.head.appendChild(sliderStyles);
+  },
+};
+
+// ========================
+// 10. GAME VOTE MODULE
+// ========================
+const gameVoteModule = {
+  /**
+   * Initialize game voting functionality
+   */
+  init: function () {
+    const optionsPanel = document.getElementById("options-panel");
+    if (!optionsPanel) return;
+
+    // Create vote button
+    const voteButton = document.createElement("button");
+    voteButton.innerHTML = `<i class="fa-solid fa-vote-yea"></i><span> Vote for a Game</span>`;
+    voteButton.className =
+      "w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors";
+    voteButton.addEventListener("click", () => this.showVoteModal());
+
     optionsPanel.appendChild(voteButton);
-  } else {
-    // En caso de que no exista el panel, agregamos al body (fallback)
-    document.body.appendChild(voteButton);
-  }
+  },
 
-  voteButton.addEventListener("click", showVoteModal);
-
-  function showVoteToast(gameTitle) {
+  /**
+   * Show toast notification for vote
+   * @param {string} gameTitle - Game title voted for
+   */
+  showVoteToast: function (gameTitle) {
     let toastContainer = document.getElementById("vote-toast");
     if (!toastContainer) {
       toastContainer = document.createElement("div");
       toastContainer.id = "vote-toast";
-      // Posicionar en la parte superior central
+      // Position at top center
       toastContainer.style.position = "fixed";
       toastContainer.style.top = "20px";
       toastContainer.style.left = "50%";
@@ -654,21 +1084,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     toastContainer.appendChild(toast);
 
-    // Forzar reflow y mostrar toast
+    // Show toast with animation
     setTimeout(() => {
       toast.style.opacity = "1";
     }, 10);
 
+    // Auto-hide
     setTimeout(() => {
       toast.style.opacity = "0";
       setTimeout(() => {
         toast.remove();
       }, 500);
     }, 3000);
-  }
+  },
 
-  function showVoteModal() {
-    // Crear el overlay del modal
+  /**
+   * Show modal for game voting
+   */
+  showVoteModal: function () {
+    // Modal overlay
     const modalOverlay = document.createElement("div");
     modalOverlay.id = "voteModalOverlay";
     modalOverlay.style.position = "fixed";
@@ -682,17 +1116,17 @@ document.addEventListener("DOMContentLoaded", () => {
     modalOverlay.style.alignItems = "center";
     modalOverlay.style.zIndex = "1100";
 
-    // Crear el contenedor del modal (aumentar el ancho para 4 columnas)
+    // Modal content
     const modalContent = document.createElement("div");
     modalContent.style.backgroundColor = "#1f2937";
     modalContent.style.padding = "20px";
     modalContent.style.border = "2px solid #9333ea";
     modalContent.style.borderRadius = "8px";
-    modalContent.style.width = "600px"; // ancho aumentado para 4 columnas
+    modalContent.style.width = "600px";
     modalContent.style.maxHeight = "80%";
     modalContent.style.overflowY = "auto";
 
-    // Agregar título al modal
+    // Title
     const title = document.createElement("h2");
     title.textContent = "Vote for a Game";
     title.style.color = "#9333ea";
@@ -700,11 +1134,10 @@ document.addEventListener("DOMContentLoaded", () => {
     title.style.marginBottom = "10px";
     modalContent.appendChild(title);
 
-    // Contenedor para la lista de juegos
+    // Games list
     const gamesList = document.createElement("ul");
     gamesList.style.listStyle = "none";
     gamesList.style.padding = "0";
-    // Agregar mensaje de loading antes de cargar los datos
     gamesList.innerHTML =
       "<li style='color:#fff; text-align:center;'>Loading games, please wait...</li>";
     modalContent.appendChild(gamesList);
@@ -712,19 +1145,18 @@ document.addEventListener("DOMContentLoaded", () => {
     modalOverlay.appendChild(modalContent);
     document.body.appendChild(modalOverlay);
 
-    // Cerrar modal al hacer clic fuera del contenedor
+    // Close on outside click
     modalOverlay.addEventListener("click", (e) => {
       if (e.target === modalOverlay) {
         modalOverlay.remove();
       }
     });
 
-    // Obtener juegos desde el endpoint /games
+    // Fetch games
     fetch("/games")
       .then((response) => response.json())
       .then((games) => {
         gamesList.innerHTML = "";
-        // Usar layout grid de 4 columnas con un espacio entre ítems
         gamesList.style.display = "grid";
         gamesList.style.gridTemplateColumns = "repeat(4, 1fr)";
         gamesList.style.gap = "10px";
@@ -740,7 +1172,7 @@ document.addEventListener("DOMContentLoaded", () => {
           li.style.cursor = "pointer";
           li.style.transition = "background 0.2s ease";
 
-          // Cambiar fondo al pasar el ratón
+          // Hover effect
           li.addEventListener("mouseover", () => {
             li.style.background = "#4b5563";
           });
@@ -748,7 +1180,7 @@ document.addEventListener("DOMContentLoaded", () => {
             li.style.background = "#374151";
           });
 
-          // Crear imagen representativa del juego con mayor tamaño
+          // Game image
           const img = document.createElement("img");
           img.src = game.image;
           img.alt = game.title;
@@ -759,7 +1191,7 @@ document.addEventListener("DOMContentLoaded", () => {
           img.style.marginBottom = "8px";
           li.appendChild(img);
 
-          // Agregar título con mejor presentación
+          // Game title
           const span = document.createElement("span");
           span.textContent = game.title;
           span.style.color = "#fff";
@@ -767,12 +1199,13 @@ document.addEventListener("DOMContentLoaded", () => {
           span.style.textAlign = "center";
           li.appendChild(span);
 
+          // Vote action
           li.addEventListener("click", () => {
-            // Emitir el voto y cerrar el modal
             socket.emit("gameVote", game.title);
             modalOverlay.remove();
-            showVoteToast(game.title);
+            this.showVoteToast(game.title);
           });
+
           gamesList.appendChild(li);
         });
       })
@@ -780,262 +1213,122 @@ document.addEventListener("DOMContentLoaded", () => {
         gamesList.innerHTML = "<li style='color:red'>Error loading games</li>";
         console.error("Error fetching games:", error);
       });
-  }
-});
+  },
+};
 
-// -------------------------
-// Hide / Show Chat
-// -------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  const optionsPanel = document.getElementById("options-panel");
-  const toggleChatBtn = document.createElement("button");
-  toggleChatBtn.innerHTML = `<i class="fa-solid fa-comments"></i><span> Hide/Show Chat</span>`;
-  toggleChatBtn.className =
-    "w-full bg-primary hover:bg-accent px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors";
-  toggleChatBtn.addEventListener("click", () => {
-    const textChat = document.getElementById("textChat");
-    // Si el chat está oculto, lo mostramos; de lo contrario, lo ocultamos
-    if (!textChat.style.display || textChat.style.display === "block") {
-      textChat.style.display = "none";
-    } else {
-      textChat.style.display = "block";
-    }
-  });
-  optionsPanel.appendChild(toggleChatBtn);
-});
+// ========================
+// 11. SESSION MANAGEMENT MODULE
+// ========================
+const sessionManagementModule = {
+  /**
+   * Clear approval cookie and close connection
+   */
+  clearApprovalAndClose: function () {
+    document.cookie =
+      "approved=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
 
-// -------------------------
-// Control de Volumen del Video
-// -------------------------
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Detección mejorada para dispositivos iOS e iPadOS
-  function isIOS() {
-    return (
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    // Hide virtual gamepad if present
+    const gamepadContainer = document.getElementById(
+      "virtual-gamepad-container"
     );
-  }
-
-  // Si es iOS o iPadOS, se salta la creación del control de volumen
-  if (isIOS()) return;
-
-  const videoElem = document.getElementById("video");
-  const optionsPanel = document.getElementById("options-panel");
-
-  // Crear el contenedor del control de volumen
-  const volumeContainer = document.createElement("div");
-  volumeContainer.className =
-    "w-full bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md transition-colors mt-3";
-
-  // Crear el encabezado con icono y etiqueta
-  const volumeHeader = document.createElement("div");
-  volumeHeader.className = "flex items-center justify-between mb-2";
-
-  // Etiqueta con icono para el control de volumen
-  const volumeLabel = document.createElement("label");
-  volumeLabel.setAttribute("for", "volume-slider");
-  volumeLabel.className = "text-sm font-medium flex items-center";
-  volumeLabel.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-    </svg>
-    Volume
-  `;
-
-  // Indicador de porcentaje
-  const volumePercentage = document.createElement("span");
-  volumePercentage.id = "volume-percentage";
-  volumePercentage.className = "text-xs font-medium text-primary";
-  volumePercentage.textContent = `${Math.round(videoElem.volume * 100)}%`;
-
-  volumeHeader.appendChild(volumeLabel);
-  volumeHeader.appendChild(volumePercentage);
-
-  // Contenedor para el slider y la barra de progreso
-  const sliderContainer = document.createElement("div");
-  sliderContainer.className = "relative h-6 flex items-center";
-
-  // Barra de fondo
-  const sliderBackground = document.createElement("div");
-  sliderBackground.className = "absolute w-full h-1.5 bg-gray-800 rounded-full";
-
-  // Barra de progreso
-  const sliderProgress = document.createElement("div");
-  sliderProgress.id = "volume-progress";
-  sliderProgress.className =
-    "absolute h-1.5 bg-gradient-to-r from-purple-700 to-primary rounded-full";
-  sliderProgress.style.width = `${videoElem.volume * 100}%`;
-
-  // Crear el slider de volumen
-  const volumeSlider = document.createElement("input");
-  volumeSlider.type = "range";
-  volumeSlider.id = "volume-slider";
-  volumeSlider.min = "0";
-  volumeSlider.max = "1";
-  volumeSlider.step = "0.01";
-  volumeSlider.value = videoElem.volume;
-  volumeSlider.className =
-    "absolute w-full appearance-none bg-transparent cursor-pointer z-10";
-
-  // Agregar elementos al contenedor del slider
-  sliderContainer.appendChild(sliderBackground);
-  sliderContainer.appendChild(sliderProgress);
-  sliderContainer.appendChild(volumeSlider);
-
-  // Indicadores de volumen bajo/alto
-  const volumeIndicators = document.createElement("div");
-  volumeIndicators.className =
-    "flex justify-between text-xs text-gray-400 mt-1";
-  volumeIndicators.innerHTML = `
-    <span>
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      </svg>
-    </span>
-    <span>
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      </svg>
-    </span>
-  `;
-
-  // Al mover el slider se actualiza el volume del video
-  volumeSlider.addEventListener("input", (e) => {
-    const value = e.target.value;
-    videoElem.volume = value;
-    sliderProgress.style.width = `${value * 100}%`;
-    volumePercentage.textContent = `${Math.round(value * 100)}%`;
-    updateVolumeIcon(value);
-    console.log("Volumen ajustado a:", value);
-  });
-
-  // Función para actualizar el icono según el nivel de volumen
-  function updateVolumeIcon(value) {
-    const iconContainer = volumeLabel.querySelector("svg");
-    if (!iconContainer) return;
-
-    let iconPath = "";
-
-    if (value === "0" || parseFloat(value) === 0) {
-      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />`;
-    } else if (parseFloat(value) < 0.5) {
-      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072" />`;
-    } else {
-      iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 0 1 0 7.072m2.828-9.9a9 9 0 0 1 0 12.728M5.586 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />`;
+    if (gamepadContainer) {
+      gamepadContainer.style.display = "none";
     }
 
-    iconContainer.innerHTML = iconPath;
-  }
-
-  // Agregar elementos al contenedor principal
-  volumeContainer.appendChild(volumeHeader);
-  volumeContainer.appendChild(sliderContainer);
-  volumeContainer.appendChild(volumeIndicators);
-
-  // Agregar estilos personalizados para el slider
-  const sliderStyles = document.createElement("style");
-  sliderStyles.textContent = `
-    #volume-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #9333ea;
-      cursor: pointer;
-      border: 2px solid #d8b4fe;
-      box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
-      transition: all 0.2s ease;
+    // Close socket connection
+    if (socket && socket.connected) {
+      socket.close();
     }
-    #volume-slider::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #9333ea;
-      cursor: pointer;
-      border: 2px solid #d8b4fe;
-      box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
-      transition: all 0.2s ease;
+
+    // Close WebRTC connection
+    if (peerConnection) {
+      peerConnection.close();
+      peerConnection = null;
     }
-    #volume-slider::-webkit-slider-thumb:hover {
-      background: #7e22ce;
-      transform: scale(1.1);
-      box-shadow: 0 0 10px rgba(147, 51, 234, 0.7);
-    }
-    #volume-slider::-moz-range-thumb:hover {
-      background: #7e22ce;
-      transform: scale(1.1);
-      box-shadow: 0 0 10px rgba(147, 51, 234, 0.7);
-    }
-    #volume-slider::-webkit-slider-runnable-track,
-    #volume-slider::-moz-range-track {
-      height: 0px;
-      background: transparent;
-    }
-  `;
-  document.head.appendChild(sliderStyles);
 
-  // Agregar el control de volumen al panel de opciones
-  if (optionsPanel) {
-    optionsPanel.appendChild(volumeContainer);
-  }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const video = document.getElementById("video");
-  const btnOptions = document.getElementById("btn-options");
-
-  function updateOptionsButtonVisibility() {
-    // Se mostrará solo si hay video reproduciéndose
-    if (video && !video.paused) {
-      btnOptions.classList.remove("hidden");
-    } else {
-      btnOptions.classList.add("hidden");
-    }
-  }
-
-  // Actualizar al iniciar y ante cambios en el estado del video
-  video.addEventListener("play", updateOptionsButtonVisibility);
-  video.addEventListener("pause", updateOptionsButtonVisibility);
-  updateOptionsButtonVisibility();
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const chatInput = document.getElementById("chatInput");
-  const chatMessages = document.getElementById("chatMessages");
-
-  chatInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter" && chatInput.value.trim() !== "") {
-      const msgData = {
-        nick: localStorage.getItem("userNick") || "Anonymous",
-        message: chatInput.value.trim(),
-      };
-      socket.emit("chatMessage", msgData);
-      chatInput.value = "";
-    }
-  });
-
-  // Recibir y mostrar mensajes
-  socket.on("chatMessage", (data) => {
-    const msgDiv = document.createElement("div");
-    msgDiv.className =
-      "p-2 rounded-lg bg-gray-700 shadow hover:bg-gray-600 transition-all duration-300";
-    const nickColor =
-      data.nick === "Admin/Host" ? "text-purple-300" : "text-green-300";
-    msgDiv.innerHTML = `<strong class="${nickColor}">${data.nick}:</strong>
-                        <span class="ml-1 text-gray-100">${data.message}</span>`;
-
-    chatMessages.appendChild(msgDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
+    // Redirect to home page after delay
     setTimeout(() => {
-      msgDiv.classList.add("opacity-0", "transition-opacity", "duration-500");
-      setTimeout(() => {
-        msgDiv.remove();
-      }, 500);
-    }, 6000);
-  });
+      window.location.href = "/";
+    }, 1500);
+  },
+
+  /**
+   * Initialize session management event listeners
+   */
+  init: function () {
+    // Handle page unload to clean up connections
+    window.addEventListener("beforeunload", this.clearApprovalAndClose);
+    window.addEventListener("unload", this.clearApprovalAndClose);
+    window.addEventListener("pagehide", this.clearApprovalAndClose);
+  },
+};
+
+// ========================
+// INITIALIZATION
+// ========================
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize modules in proper order
+  socketModule.init();
+  uiModule.setupEventHandlers();
+  statsModule.init();
+  gamepadModule.init();
+  chatModule.init();
+  qualityModule.init();
+  volumeModule.init();
+  gameVoteModule.init();
+  sessionManagementModule.init();
+
+  // Initial UI update
+  uiModule.updateOptionsButtonVisibility();
+});
+
+// Ensure statistics module initialization
+document.addEventListener("DOMContentLoaded", function () {
+  // Asegurarnos que el módulo de estadísticas se inicialice correctamente
+  if (typeof statsModule !== "undefined" && statsModule.init) {
+    statsModule.init();
+    console.log("Statistics module initialized");
+  } else {
+    console.warn("Statistics module not found or init method missing");
+  }
+
+  // Re-vincular el evento del botón de estadísticas
+  const toggleStatsBtn = document.getElementById("toggle-stats");
+  if (toggleStatsBtn) {
+    toggleStatsBtn.addEventListener("click", function () {
+      const statsElement = document.getElementById("client-stats");
+      if (statsElement) {
+        const isHidden = statsElement.classList.contains("hidden");
+        if (isHidden) {
+          statsElement.classList.remove("hidden");
+          statsElement.classList.add(
+            "fixed",
+            "top-4",
+            "left-4",
+            "z-20",
+            "bg-black",
+            "bg-opacity-70",
+            "p-3",
+            "rounded",
+            "text-xs",
+            "text-white",
+            "max-w-xs"
+          );
+          this.querySelector("span").textContent = "Hide Stats";
+          // Iniciar actualización de estadísticas
+          if (typeof statsModule !== "undefined" && statsModule.startUpdating) {
+            statsModule.startUpdating();
+          }
+        } else {
+          statsElement.classList.add("hidden");
+          statsElement.classList.remove("fixed", "top-4", "left-4", "z-20");
+          this.querySelector("span").textContent = "Show Stats";
+          // Detener actualización de estadísticas
+          if (typeof statsModule !== "undefined" && statsModule.stopUpdating) {
+            statsModule.stopUpdating();
+          }
+        }
+      }
+    });
+  }
 });
