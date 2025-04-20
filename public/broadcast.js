@@ -18,6 +18,7 @@ const videoSenders = {};
 const peerConnections = {};
 const joystickDataByPeer = {};
 const peerLatencies = {};
+const peerNicknames = {};
 let broadcastStream = null;
 let startTime = null;
 let gameVotes = {};
@@ -176,7 +177,10 @@ function updatePeerList() {
             </svg>
           </div>
           <div>
-            <div class="font-medium text-white">${shortPeerId}</div>
+            <div class="font-medium text-white">${
+              peerNicknames[peerId] || "Anonymous"
+            }</div>
+            <div class="text-gray-400 text-xs">ID: ${shortPeerId}</div>
             <div class="flex items-center ${latencyClass} text-xs mt-1">
               ${latencyIcon}
               Latency: ${latency}
@@ -738,8 +742,18 @@ function handleNewWatcher(id) {
  * Send ping to check peer latency
  */
 function sendAdminPing(peerId) {
-  const pingStart = Date.now();
-  socket.emit("admin-ping", { target: peerId, pingStart });
+  if (!peerId) {
+    console.warn("Attempting to send ping to an undefined peerId");
+    return;
+  }
+
+  const pingData = {
+    target: peerId,
+    timestamp: Date.now(),
+    peerId: peerId,
+  };
+
+  socket.emit("admin-ping", pingData);
 }
 
 /**
@@ -1097,8 +1111,22 @@ socket.on("joystick-data", (data) => {
 });
 
 socket.on("admin-pong", (data) => {
-  const latency = Date.now() - data.pingStart;
+  const now = Date.now();
+
+  if (!data.peerId) {
+    console.warn("Recibido admin-pong sin peerId válido:", data);
+    return;
+  }
+
+  const latency = now - data.timestamp;
   peerLatencies[data.peerId] = latency;
+
+  if (data.nick) {
+    peerNicknames[data.peerId] = data.nick;
+    console.log(`Actualizado nickname para ${data.peerId}: ${data.nick}`);
+  }
+
+  updatePeerList();
 });
 
 socket.on("selectQuality", ({ peerId, quality }) => {

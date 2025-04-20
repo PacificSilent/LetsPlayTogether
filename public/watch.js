@@ -152,12 +152,15 @@ const socketModule = {
     });
 
     socket.on("admin-ping", (data) => {
-      if (data.target === socket.id) {
-        socket.emit("admin-pong", {
-          peerId: socket.id,
-          pingStart: data.pingStart,
-        });
-      }
+      const userNick = localStorage.getItem("userNick") || "Anonymous";
+
+      const peerId = data.peerId || socket.id;
+
+      socket.emit("admin-pong", {
+        timestamp: data.timestamp,
+        peerId: peerId,
+        nick: userNick,
+      });
     });
 
     socket.on("disconnectPeer", (peerId) => {
