@@ -1,7 +1,7 @@
 {
-  "name": "webrtcvideobroadcast",
+  "name": "letsplaytogether",
   "version": "1.0.0",
-  "description": "WebRTC example for a video broadcast",
+  "description": "A web application that allows users to play games using WebRTC and Socket.IO.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,7 +10,7 @@
     "WebRTC",
     "SocketIO"
   ],
-  "author": "Tanner Gabriel",
+  "author": "PacificSilent",
   "license": "MIT",
   "dependencies": {
     "cookie-parser": "^1.4.7",

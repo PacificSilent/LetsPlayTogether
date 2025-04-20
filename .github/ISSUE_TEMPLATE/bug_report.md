@@ -40,4 +40,4 @@ Add any other context about the problem here.
 **Checklist**:
 <!--- Make sure you've completed the following steps (put an "X" between of brackets): -->
 - [] I included all information required in the sections above
-- [] I made sure there are no duplicates of this report [(Use Search)](https://github.com/TannerGabriel/WebRTC-Video-Broadcast/issues?q=is%3Aissue)
+- [] I made sure there are no duplicates of this report
