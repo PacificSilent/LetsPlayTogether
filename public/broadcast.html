@@ -25,6 +25,9 @@
   <body
     class="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white"
   >
+    <!-- Audio element for notification sound -->
+    <audio id="connectionSound" preload="auto" src="/sounds/notify.mp3"></audio>
+
     <!-- Header -->
     <header class="p-4 bg-gray-900 border-b border-purple-800 shadow-lg">
       <div class="container mx-auto flex justify-between items-center">
@@ -265,8 +268,23 @@
           </div>
           <div id="stats" class="p-4 text-gray-300">
             <!-- Stats will be populated by JavaScript -->
-            <div class="flex justify-center items-center p-4">
-              <p class="text-gray-500">
+            <div class="flex flex-col items-center justify-center py-8">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="text-gray-600 mb-3"
+              >
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+              </svg>
+              <p class="text-gray-500 text-center">
                 Statistics will appear when broadcasting
               </p>
             </div>
@@ -648,45 +666,34 @@
         <span>Let's Play Together - Broadcast Control Panel</span>
       </div>
     </footer>
-
     <script>
-      // Update UI elements when broadcast state changes
       document.addEventListener("DOMContentLoaded", function () {
         const videoElement = document.querySelector("video");
         const placeholderVideo = document.getElementById("placeholderVideo");
         const streamStatus = document.getElementById("streamStatus");
         const headerStatus = document.getElementById("headerStatus");
-        const toggleBtn = document.getElementById("toggleBroadcast");
+        const observer = new MutationObserver(function (mutations) {
+          mutations.forEach(function (mutation) {
+            if (mutation.attributeName === "class") {
+              const isHidden = videoElement.classList.contains("hidden");
+              if (!isHidden) {
+                placeholderVideo.classList.add("hidden");
+                streamStatus.textContent = "Live";
+                streamStatus.classList.remove("bg-gray-700");
+                streamStatus.classList.add("bg-red-600");
+                headerStatus.textContent = "Broadcasting";
+              } else {
+                placeholderVideo.classList.remove("hidden");
+                streamStatus.textContent = "Offline";
+                streamStatus.classList.remove("bg-red-600");
+                streamStatus.classList.add("bg-gray-700");
+                headerStatus.textContent = "Ready to broadcast";
+              }
+            }
+          });
+        });
 
-        // Update UI when broadcast starts
-        function updateUIForBroadcastStart() {
-          videoElement.classList.remove("hidden");
-          placeholderVideo.classList.add("hidden");
-          streamStatus.textContent = "Live";
-          streamStatus.classList.remove("bg-gray-700");
-          streamStatus.classList.add("bg-red-600");
-          headerStatus.textContent = "Broadcasting";
-        }
-
-        // Update UI when broadcast stops
-        function updateUIForBroadcastStop() {
-          videoElement.classList.add("hidden");
-          placeholderVideo.classList.remove("hidden");
-          streamStatus.textContent = "Offline";
-          streamStatus.classList.remove("bg-red-600");
-          streamStatus.classList.add("bg-gray-700");
-          headerStatus.textContent = "Ready to broadcast";
-        }
-
-        // Override the original click handler to include our UI updates
-        const originalClickHandler = toggleBtn.onclick;
-        toggleBtn.onclick = function () {
-          if (toggleBtn.textContent.includes("Start")) {
-            updateUIForBroadcastStart();
-          } else {
-            updateUIForBroadcastStop();
-          }
-        };
+        observer.observe(videoElement, { attributes: true });
       });
     </script>
 
