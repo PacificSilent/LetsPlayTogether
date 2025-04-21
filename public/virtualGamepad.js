@@ -147,8 +147,6 @@
     });
     return btn;
   }
-
-  // Función para crear un analog stick (solo movimiento). Se coloca según las posiciones pasadas.
   function createAnalogStick(id, pos) {
     const stickContainer = document.createElement("div");
     stickContainer.style.position = "absolute";
@@ -246,36 +244,97 @@
 
     container.appendChild(stickContainer);
 
-    // Botón separado para L3 o R3 (reposicionado y de mayor tamaño)
-    const stickBtn = createButton(
-      id === "leftStick" ? "L3" : "R3",
-      () => {
-        if (id === "leftStick") gamepadState.leftStickBtn = true;
-        else gamepadState.rightStickBtn = true;
+    return stickContainer;
+  }
+
+  function createIndependentL3R3Buttons() {
+    const l3Button = document.createElement("div");
+    l3Button.textContent = "L3";
+    l3Button.style.position = "absolute";
+    l3Button.style.left = "160px"; // A la derecha del analog izquierdo
+    l3Button.style.bottom = "60px"; // Alineado con la parte baja de los sticks
+    l3Button.style.width = "50px";
+    l3Button.style.height = "50px";
+    l3Button.style.background = "rgba(70, 130, 180, 0.8)"; // Color azul acero
+    l3Button.style.color = "white";
+    l3Button.style.fontWeight = "bold";
+    l3Button.style.borderRadius = "50%";
+    l3Button.style.display = "flex";
+    l3Button.style.justifyContent = "center";
+    l3Button.style.alignItems = "center";
+    l3Button.style.fontSize = "16px";
+    l3Button.style.boxShadow = "0 4px 8px rgba(0,0,0,0.4)";
+    l3Button.style.border = "2px solid rgba(255,255,255,0.6)";
+    l3Button.style.userSelect = "none";
+    l3Button.style.touchAction = "none";
+    l3Button.style.pointerEvents = "auto";
+
+    // Botón R3 (derecha)
+    const r3Button = document.createElement("div");
+    r3Button.textContent = "R3";
+    r3Button.style.position = "absolute";
+    r3Button.style.right = "160px"; // A la izquierda del analog derecho
+    r3Button.style.bottom = "60px"; // Alineado con la parte baja de los sticks
+    r3Button.style.width = "50px";
+    r3Button.style.height = "50px";
+    r3Button.style.background = "rgba(70, 130, 180, 0.8)"; // Color azul acero
+    r3Button.style.color = "white";
+    r3Button.style.fontWeight = "bold";
+    r3Button.style.borderRadius = "50%";
+    r3Button.style.display = "flex";
+    r3Button.style.justifyContent = "center";
+    r3Button.style.alignItems = "center";
+    r3Button.style.fontSize = "16px";
+    r3Button.style.boxShadow = "0 4px 8px rgba(0,0,0,0.4)";
+    r3Button.style.border = "2px solid rgba(255,255,255,0.6)";
+    r3Button.style.userSelect = "none";
+    r3Button.style.touchAction = "none";
+    r3Button.style.pointerEvents = "auto";
+
+    // Efecto visual y de interacción para L3
+    function setupButtonEvents(btn, isL3) {
+      const defaultBg = btn.style.background;
+      const pressedBg = "rgba(40, 80, 120, 0.8)"; // Más oscuro cuando se presiona
+
+      btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.style.background = pressedBg;
+        btn.style.transform = "scale(0.95)";
+
+        if (isL3) {
+          gamepadState.leftStickBtn = true;
+        } else {
+          gamepadState.rightStickBtn = true;
+        }
         sendState();
-      },
-      () => {
-        if (id === "leftStick") gamepadState.leftStickBtn = false;
-        else gamepadState.rightStickBtn = false;
+      });
+
+      const handleUp = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.style.background = defaultBg;
+        btn.style.transform = "scale(1)";
+
+        if (isL3) {
+          gamepadState.leftStickBtn = false;
+        } else {
+          gamepadState.rightStickBtn = false;
+        }
         sendState();
-      }
-    );
-    stickBtn.style.position = "absolute";
-    // Para el analog izquierdo, colocar L3 a la derecha, centrado verticalmente:
-    if (id === "leftStick") {
-      stickBtn.style.right = "-80px"; // Se sale un poco del contenedor
-      stickBtn.style.top = "50%";
-      stickBtn.style.transform = "translateY(-50%)";
-    } else {
-      // Para el analog derecho, colocar R3 a la izquierda, centrado verticalmente:
-      stickBtn.style.left = "-80px";
-      stickBtn.style.top = "50%";
-      stickBtn.style.transform = "translateY(-50%)";
+      };
+
+      btn.addEventListener("pointerup", handleUp);
+      btn.addEventListener("pointercancel", handleUp);
+      btn.addEventListener("pointerleave", handleUp);
     }
-    stickBtn.style.width = "50px";
-    stickBtn.style.height = "50px";
-    stickBtn.style.fontSize = "16px";
-    stickContainer.appendChild(stickBtn);
+
+    setupButtonEvents(l3Button, true);
+    setupButtonEvents(r3Button, false);
+
+    // Agregar al contenedor principal
+    container.appendChild(l3Button);
+    container.appendChild(r3Button);
   }
 
   // Cruceta (D-pad) en la parte izquierda, encima del left analog stick
@@ -653,5 +712,5 @@
   createFaceButtons();
   createLeftShoulders();
   createRightShoulders();
-  // (Si deseas mantener Start/Select, puedes seguir utilizando createShouldersAndCenter para ellos)
+  createIndependentL3R3Buttons();
 })();
