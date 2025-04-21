@@ -39,6 +39,25 @@ Before running this application, make sure you have the following:
 - **OBS (Open Broadcaster Software)**: Required to use the virtual camera functionality for streaming.
 - **Python**: A specific Python version is needed for joystick functionality.
 - **API Key**: Add your API key to the `.env` file to enable downloading game covers.
+- **Games Configuration**: Update the `games.json` file to include your available games. This file is used to display the game list during voting sessions, allowing viewers to vote on which game to play next. Each entry should include game title, cover image path, and any additional metadata for proper display in the voting interface. For example, your `games.json` file could look like this:
+
+```json
+{
+  "games": [
+    {
+      "Name": "The Witcher 3: Wild Hunt"
+    },
+    {
+      "Name": "Hades"
+    },
+    {
+      "Name": "Red Dead Redemption 2"
+    }
+  ]
+}
+```
+
+You can export your Playnite library and adapt it to this format to populate the voting system.
 
 #### Using Node.js
 
